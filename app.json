@@ -1,0 +1,40 @@
+{
+	"expo": {
+		"name": "Capitillian",
+		"slug": "capitillian",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"userInterfaceStyle": "dark",
+		"newArchEnabled": true,
+		"splash": {
+			"image": "./assets/icon.png",
+			"resizeMode": "cover",
+			"backgroundColor": "#0a0a0a"
+		},
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.kk11.capitillian",
+			"buildNumber": "1",
+			"infoPlist": {
+				"ITSAppUsesNonExemptEncryption": false
+			}
+		},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/icon.png",
+				"backgroundColor": "#0a0a0a"
+			},
+			"package": "com.kk11.capitillian",
+			"versionCode": 1,
+			"edgeToEdgeEnabled": true
+		},
+		"plugins": [],
+		"scheme": "capitillian",
+		"extra": {
+			"eas": {
+				"projectId": "YOUR_EAS_PROJECT_ID"
+			}
+		}
+	}
+}
