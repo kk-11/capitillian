@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { colors } from "../theme/colors";
 
 export default function HomeScreen() {
-	const { user, signOut } = useAuth();
+	const { user, isAuthenticated, signOut } = useAuth();
 
 	return (
 		<SafeAreaView style={styles.safe}>
@@ -13,9 +13,11 @@ export default function HomeScreen() {
 				<Text style={styles.title}>Home</Text>
 				<Text style={styles.subtitle}>{user?.email}</Text>
 
-				<TouchableOpacity style={styles.button} onPress={signOut}>
-					<Text style={styles.buttonText}>Sign out</Text>
-				</TouchableOpacity>
+				{isAuthenticated && (
+					<TouchableOpacity style={styles.button} onPress={signOut}>
+						<Text style={styles.buttonText}>Sign out</Text>
+					</TouchableOpacity>
+				)}
 			</View>
 		</SafeAreaView>
 	);

@@ -1,16 +1,14 @@
--- User profiles table
--- Created automatically on first sign-in via trigger
+-- User profiles
 create table if not exists public.user_profiles (
-  id uuid references auth.users(id) on delete cascade primary key,
-  display_name text,
-  created_at timestamptz default now() not null,
-  updated_at timestamptz default now() not null
+  id            uuid references auth.users(id) on delete cascade primary key,
+  display_name  text,
+  is_premium    boolean not null default false,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
--- Enable RLS
 alter table public.user_profiles enable row level security;
 
--- Users can read and update their own profile
 create policy "users can view own profile"
   on public.user_profiles for select
   using (auth.uid() = id);

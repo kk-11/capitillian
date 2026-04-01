@@ -29,7 +29,45 @@
 			"versionCode": 1,
 			"edgeToEdgeEnabled": true
 		},
-		"plugins": [],
+		"plugins": [
+			[
+				"expo-alternate-app-icons",
+				{
+					"icons": [
+						{
+							"name": "match-bronze",
+							"ios": { "image": "./assets/icons/match-bronze.png" },
+							"android": { "foregroundImage": "./assets/icons/match-bronze.png", "backgroundColor": "#CD7F32" }
+						},
+						{
+							"name": "match-silver",
+							"ios": { "image": "./assets/icons/match-silver.png" },
+							"android": { "foregroundImage": "./assets/icons/match-silver.png", "backgroundColor": "#C0C0C0" }
+						},
+						{
+							"name": "match-gold",
+							"ios": { "image": "./assets/icons/match-gold.png" },
+							"android": { "foregroundImage": "./assets/icons/match-gold.png", "backgroundColor": "#FFD700" }
+						},
+						{
+							"name": "mine-bronze",
+							"ios": { "image": "./assets/icons/mine-bronze.png" },
+							"android": { "foregroundImage": "./assets/icons/mine-bronze.png", "backgroundColor": "#CD7F32" }
+						},
+						{
+							"name": "mine-silver",
+							"ios": { "image": "./assets/icons/mine-silver.png" },
+							"android": { "foregroundImage": "./assets/icons/mine-silver.png", "backgroundColor": "#C0C0C0" }
+						},
+						{
+							"name": "mine-gold",
+							"ios": { "image": "./assets/icons/mine-gold.png" },
+							"android": { "foregroundImage": "./assets/icons/mine-gold.png", "backgroundColor": "#FFD700" }
+						}
+					]
+				}
+			]
+		],
 		"scheme": "capitillian",
 		"extra": {
 			"eas": {

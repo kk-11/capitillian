@@ -7,6 +7,7 @@ type AuthContextValue = {
 	user: User | null;
 	initializing: boolean;
 	isAuthenticated: boolean;
+	isPremium: boolean;
 	displayName: string | null;
 	getSession: () => Promise<Session | null>;
 	refreshSession: () => Promise<void>;
@@ -19,12 +20,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [initializing, setInitializing] = useState(true);
+	const [isPremium, setIsPremium] = useState(false);
 	const [displayName, setDisplayName] = useState<string | null>(null);
 
 	const refreshProfile = async (targetSession?: Session | null) => {
 		const s = targetSession ?? session;
 		const userId = s?.user?.id;
 		if (!userId) {
+			setIsPremium(false);
 			setDisplayName(null);
 			return;
 		}
@@ -32,17 +35,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		try {
 			const { data, error } = await supabase
 				.from("user_profiles")
-				.select("display_name")
+				.select("display_name, is_premium")
 				.eq("id", userId)
 				.single();
 
 			if (error) {
+				setIsPremium(false);
 				setDisplayName(null);
 				return;
 			}
 
+			setIsPremium(data?.is_premium === true);
 			setDisplayName(typeof data?.display_name === "string" ? data.display_name : null);
 		} catch {
+			setIsPremium(false);
 			setDisplayName(null);
 		}
 	};
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			user: session?.user ?? null,
 			initializing,
 			isAuthenticated: !!session,
+			isPremium,
 			displayName,
 			getSession: async () => {
 				const {
@@ -121,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				await supabase.auth.signOut();
 			},
 		}),
-		[initializing, session, displayName],
+		[initializing, session, isPremium, displayName],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

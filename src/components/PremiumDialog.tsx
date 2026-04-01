@@ -1,0 +1,156 @@
+import React from "react";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { colors } from "../theme/colors";
+
+// ---------------------------------------------------------------------------
+// Feature list
+// ---------------------------------------------------------------------------
+
+const FEATURES = [
+  { icon: "∞",  label: "Unlimited daily games" },
+  { icon: "↺",  label: "Unlimited practice sessions" },
+  { icon: "◉",  label: "Learning mode — study without timer pressure" },
+  { icon: "◈",  label: "Game settings — filter by continent & difficulty" },
+];
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+interface PremiumDialogProps {
+  visible: boolean;
+  onPurchase: () => void;
+  onDismiss: () => void;
+}
+
+export default function PremiumDialog({ visible, onPurchase, onDismiss }: PremiumDialogProps) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+      <View style={styles.backdrop}>
+        <View style={styles.card}>
+
+          <Text style={styles.eyebrow}>UNLOCK THE FULL GAME</Text>
+          <Text style={styles.title}>Go Premium</Text>
+          <Text style={styles.price}>€5 · one-time purchase</Text>
+
+          <View style={styles.divider} />
+
+          <View style={styles.features}>
+            {FEATURES.map((f) => (
+              <View key={f.label} style={styles.featureRow}>
+                <Text style={styles.featureIcon}>{f.icon}</Text>
+                <Text style={styles.featureLabel}>{f.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.buyButton} onPress={onPurchase} activeOpacity={0.85}>
+            <Text style={styles.buyText}>Unlock for €5</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.dismissButton} onPress={onDismiss} activeOpacity={0.7}>
+            <Text style={styles.dismissText}>Maybe Later</Text>
+          </TouchableOpacity>
+
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.88)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#111418",
+    borderRadius: 20,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    gap: 16,
+    alignItems: "center",
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.8,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginTop: -4,
+  },
+  price: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: -8,
+  },
+  divider: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "#1e1e1e",
+  },
+  features: {
+    width: "100%",
+    gap: 14,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  featureIcon: {
+    fontSize: 18,
+    color: colors.primary,
+    width: 24,
+    textAlign: "center",
+  },
+  featureLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    lineHeight: 21,
+  },
+  buyButton: {
+    width: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    paddingVertical: 17,
+    alignItems: "center",
+  },
+  buyText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.background,
+  },
+  dismissButton: {
+    paddingVertical: 4,
+  },
+  dismissText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+});

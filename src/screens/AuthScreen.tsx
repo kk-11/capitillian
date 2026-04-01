@@ -11,14 +11,12 @@ import {
 	StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../services/supabase";
 import { colors } from "../theme/colors";
 
-interface AuthScreenProps {
-	onAuthSuccess: () => void;
-}
-
-export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
+export default function AuthScreen() {
+	const navigation = useNavigation();
 	const [email, setEmail] = useState("");
 	const [otp, setOtp] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -89,7 +87,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
 			if (error) throw error;
 
-			onAuthSuccess();
+			navigation.goBack();
 		} catch (error: any) {
 			Alert.alert("Invalid code", error.message || "Please check your code and try again.");
 		} finally {
