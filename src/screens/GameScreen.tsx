@@ -19,7 +19,7 @@ import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
-import { getFaceValue, REGIONS, MODE_LABELS, type GameMode } from "../data/countries";
+import { getFaceValue, REGIONS, MODE_LABELS, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
 
 // ---------------------------------------------------------------------------
@@ -58,6 +58,8 @@ export default function GameScreen() {
     const id = setInterval(() => setGlobeFrame(f => (f + 1) % 3), 400);
     return () => clearInterval(id);
   }, []);
+  const [focusedCountry, setFocusedCountry] = useState<Country | null>(null);
+  const [freePalestine, setFreePalestine] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   // Track game-just-finished synchronously so the countdown appears immediately
@@ -68,6 +70,13 @@ export default function GameScreen() {
   useEffect(() => {
     startGame(REGIONS[gameMode], isPremium, false, isHardcore);
   }, []);
+
+  // Reset focused country when a new game starts
+  useEffect(() => {
+    if (status === "ready") {
+      setFocusedCountry(null);
+    }
+  }, [status]);
 
   // Record daily play + perfect streak when a non-practice game ends.
   useEffect(() => {
@@ -110,6 +119,14 @@ export default function GameScreen() {
     countUp,
   } = state;
 
+  // Direct card press handler — updates globe AND game engine simultaneously
+  const handleCardPress = (side: "left" | "right", index: number) => {
+    const country = side === "left" ? leftCards[index] : rightCards[index];
+    console.log("[Globe] card pressed:", side, index, country?.name, country?.lat, country?.lng);
+    if (country) setFocusedCountry(country);
+    selectCard(side, index);
+  };
+
   const timerColor =
     !countUp && secondsLeft < 60 ? styles.timerRed : styles.timerDefault;
 
@@ -123,9 +140,11 @@ export default function GameScreen() {
 
   return (
     <View style={styles.container}>
-      <Globe />
+      <Globe
+        targetLat={focusedCountry?.lat}
+        targetLng={focusedCountry?.lng}
+      />
       {isHardcore && <HardcoreVignette />}
-      <Text style={styles.branding} pointerEvents="none">{GLOBE_FRAMES[globeFrame]} capitillian</Text>
       <SafeAreaView style={styles.safe}>
       {/* ------------------------------------------------------------------ */}
       {/* Top bar: timer + progress                                           */}
@@ -223,7 +242,7 @@ export default function GameScreen() {
                   isWrong={wrongFlash?.leftIndex === i}
                   isMatched={matchFlash?.code === card.code}
                   isSettled={pendingMatched.includes(card.code)}
-                  onPress={() => selectCard("left", i)}
+                  onPress={() => handleCardPress("left", i)}
                   disabled={isDisabled || pendingMatched.includes(card.code)}
                 />
               ))}
@@ -245,7 +264,7 @@ export default function GameScreen() {
                   isWrong={wrongFlash?.rightIndex === i}
                   isMatched={matchFlash?.code === card.code}
                   isSettled={pendingMatched.includes(card.code)}
-                  onPress={() => selectCard("right", i)}
+                  onPress={() => handleCardPress("right", i)}
                   disabled={isDisabled || pendingMatched.includes(card.code)}
                 />
               ))}
@@ -268,7 +287,7 @@ export default function GameScreen() {
             {status === "won" ? (
               <Text style={styles.endTitle}>Round Complete! 🎉</Text>
             ) : (
-              <Text style={styles.endTitle}>Time's Up!</Text>
+              <Text style={styles.endTitle}>Game Over!</Text>
             )}
 
             {/* Stats */}
@@ -389,6 +408,13 @@ export default function GameScreen() {
           </ScrollView>
         </View>
       )}
+      <TouchableOpacity onPress={() => setFreePalestine(f => !f)} activeOpacity={0.7} style={styles.brandingTouchable}>
+        {freePalestine ? (
+          <Text style={styles.branding}>🇵🇸 free palestine</Text>
+        ) : (
+          <Text style={styles.branding}>{GLOBE_FRAMES[globeFrame]} capitillian</Text>
+        )}
+      </TouchableOpacity>
     </SafeAreaView>
 
     <PremiumDialog
@@ -452,11 +478,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontVariant: ["tabular-nums"],
   },
-  branding: {
+  brandingTouchable: {
     position: "absolute",
     bottom: 18,
     left: 0,
     right: 0,
+    alignItems: "center",
+  },
+  branding: {
     textAlign: "center",
     fontSize: 15,
     fontWeight: "800",
