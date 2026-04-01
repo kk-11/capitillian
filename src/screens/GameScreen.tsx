@@ -5,17 +5,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../contexts/AuthContext";
 import { useFaceSelector } from "../game/useFaceSelector";
-import { useGameEngine, TARGET_PAIRS, ROUND_SECONDS } from "../game/useGameEngine";
+import { useGameEngine, ROUND_SECONDS } from "../game/useGameEngine";
 import { useDailyLimit } from "../hooks/useDailyLimit";
+import { usePerfectStreak } from "../hooks/usePerfectStreak";
 import FaceHeader from "../components/FaceHeader";
 import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
+import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
-import { getFaceValue } from "../data/countries";
+import { getFaceValue, REGIONS, MODE_LABELS, type GameMode } from "../data/countries";
 import { colors } from "../theme/colors";
 
 // ---------------------------------------------------------------------------
@@ -44,6 +48,16 @@ export default function GameScreen() {
   const { left, right, cycleLeft, cycleRight } = useFaceSelector(isPremium);
   const { state, startGame, selectCard } = useGameEngine();
   const { hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
+  const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
+  const [gameMode, setGameMode] = useState<GameMode>("all");
+  const [showModeDropdown, setShowModeDropdown] = useState(false);
+  const [isHardcore, setIsHardcore] = useState(false);
+  const [globeFrame, setGlobeFrame] = useState(0);
+  const GLOBE_FRAMES = ["🌍", "🌎", "🌏"];
+  useEffect(() => {
+    const id = setInterval(() => setGlobeFrame(f => (f + 1) % 3), 400);
+    return () => clearInterval(id);
+  }, []);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   // Track game-just-finished synchronously so the countdown appears immediately
@@ -52,23 +66,34 @@ export default function GameScreen() {
   const recordedRef = useRef(false);
 
   useEffect(() => {
-    startGame();
+    startGame(REGIONS[gameMode], isPremium, false, isHardcore);
   }, []);
 
-  // Record daily play when a timed (non-practice) game ends for a free user.
+  // Record daily play + perfect streak when a non-practice game ends.
   useEffect(() => {
-    if (!isPremium && state.hasTimer && (state.status === "won" || state.status === "timeout") && !recordedRef.current) {
+    const ended = state.status === "won" || state.status === "timeout";
+    if (ended && !state.countUp && !recordedRef.current) {
+      // practice games have no timer and no countUp — exclude them via hasTimer
+    }
+    if (ended && !recordedRef.current) {
       recordedRef.current = true;
-      setGameEndedAsFree(true);
-      recordPlay();
+      // Only record streak for real (non-practice) games
+      if (state.hasTimer) {
+        recordStreakResult(state.wrongGuesses);
+      }
+      if (!isPremium && state.hasTimer) {
+        setGameEndedAsFree(true);
+        recordPlay();
+      }
     }
     if (state.status === "ready" || state.status === "idle") {
       recordedRef.current = false;
       setGameEndedAsFree(false);
     }
-  }, [state.status, state.hasTimer, isPremium]);
+  }, [state.status, state.hasTimer, state.wrongGuesses, isPremium]);
 
   const {
+    roundId,
     status,
     leftCards,
     rightCards,
@@ -82,22 +107,25 @@ export default function GameScreen() {
     secondsLeft,
     targetPairs,
     hasTimer,
+    countUp,
   } = state;
 
   const timerColor =
-    secondsLeft < 60 ? styles.timerRed : styles.timerDefault;
+    !countUp && secondsLeft < 60 ? styles.timerRed : styles.timerDefault;
 
-  const timeTaken = ROUND_SECONDS - secondsLeft;
+  const timeTaken = countUp ? secondsLeft : ROUND_SECONDS - secondsLeft;
   const isDisabled = wrongFlash !== null || matchFlash !== null;
 
   // Freemium gate flags
   const showCountdown  = !isPremium && (hasPlayedToday || gameEndedAsFree);
   const canPlayAgain   = isPremium;
-  const canPractice    = wrongCountries.length > 2 && (isPremium || !hasPracticedToday);
+  const canPractice    = wrongCountries.length > 1 && (isPremium || !hasPracticedToday);
 
   return (
     <View style={styles.container}>
       <Globe />
+      {isHardcore && <HardcoreVignette />}
+      <Text style={styles.branding} pointerEvents="none">{GLOBE_FRAMES[globeFrame]} capitillian</Text>
       <SafeAreaView style={styles.safe}>
       {/* ------------------------------------------------------------------ */}
       {/* Top bar: timer + progress                                           */}
@@ -108,27 +136,73 @@ export default function GameScreen() {
         ) : (
           <Text style={styles.practiceLabel}>PRACTICE</Text>
         )}
-        <Text style={styles.progress}>
-          {pairsMatched} / {targetPairs}
-        </Text>
+        <View style={styles.topRight}>
+          <TouchableOpacity
+            style={styles.hardcoreToggle}
+            onPress={() => {
+              const next = !isHardcore;
+              setIsHardcore(next);
+              startGame(REGIONS[gameMode], isPremium, false, next);
+            }}
+            activeOpacity={0.7}
+            disabled={status === "playing"}
+          >
+            <Text style={[styles.hardcoreLabel, isHardcore && styles.hardcoreLabelActive, status === "playing" && styles.controlsLocked]}>
+              {isHardcore ? "💔 HARDCORE" : "EASY"}
+            </Text>
+            <View style={styles.hardcoreDots}>
+              <View style={[styles.hardcoreDot, !isHardcore && styles.hardcoreDotActive]} />
+              <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
+            </View>
+          </TouchableOpacity>
+          {isPremium ? (
+            <TouchableOpacity
+              onPress={() => setShowModeDropdown(true)}
+              activeOpacity={0.7}
+              disabled={status === "playing"}
+            >
+              <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
+                {MODE_LABELS[gameMode]}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
+        </View>
       </View>
+
+      {/* Mode dropdown */}
+      <Modal visible={showModeDropdown} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowModeDropdown(false)}>
+          <View style={styles.dropdownBackdrop}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdown}>
+                {(Object.keys(MODE_LABELS) as GameMode[]).map((mode) => (
+                  <TouchableOpacity
+                    key={mode}
+                    style={styles.dropdownRow}
+                    onPress={() => {
+                      setGameMode(mode);
+                      setShowModeDropdown(false);
+                      startGame(REGIONS[mode], isPremium, false, isHardcore);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.dropdownItem, mode === gameMode && styles.dropdownItemActive]}>
+                      {MODE_LABELS[mode]}
+                    </Text>
+                    {mode === gameMode && <Text style={styles.dropdownCheck}>✓</Text>}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {/* ------------------------------------------------------------------ */}
       {/* Main board                                                          */}
       {/* ------------------------------------------------------------------ */}
       <View style={styles.board}>
-        {/* Column headers */}
-        <View style={styles.headers}>
-          <View style={styles.column}>
-            <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.column}>
-            <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
-          </View>
-        </View>
-
-        {/* Card columns */}
         <ScrollView
           style={styles.cardsScroll}
           contentContainerStyle={styles.cardsContent}
@@ -137,9 +211,10 @@ export default function GameScreen() {
           <View style={styles.cardsRow}>
             {/* Left column */}
             <View style={styles.column}>
+              <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
               {leftCards.map((card, i) => (
                 <GameCard
-                  key={`left-${card.code}`}
+                  key={`left-${roundId}-${card.code}`}
                   value={getFaceValue(card, left)}
                   face={left}
                   isSelected={
@@ -158,9 +233,10 @@ export default function GameScreen() {
 
             {/* Right column */}
             <View style={styles.column}>
+              <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
               {rightCards.map((card, i) => (
                 <GameCard
-                  key={`right-${card.code}`}
+                  key={`right-${roundId}-${card.code}`}
                   value={getFaceValue(card, right)}
                   face={right}
                   isSelected={
@@ -211,13 +287,19 @@ export default function GameScreen() {
                   <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
                 </View>
               )}
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Perfect streak</Text>
+                <Text style={styles.statValue}>
+                  {perfectStreak} {perfectStreak === 1 ? "day" : "days"}
+                </Text>
+              </View>
             </View>
 
             {/* Actions — premium vs free */}
             {canPlayAgain ? (
               <TouchableOpacity
                 style={styles.startButton}
-                onPress={() => { startGame(); }}
+                onPress={() => { startGame(REGIONS[gameMode], isPremium, false, isHardcore); }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.startButtonText}>
@@ -239,7 +321,7 @@ export default function GameScreen() {
                 onPress={() => {
                   setExpandedCode(null);
                   if (!isPremium) recordPractice();
-                  startGame(wrongCountries);
+                  startGame(wrongCountries, isPremium, true);
                 }}
                 activeOpacity={0.8}
               >
@@ -352,20 +434,103 @@ const styles = StyleSheet.create({
   timerRed: {
     color: colors.error,
   },
+  topRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  modeLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    textDecorationLine: "underline",
+    textDecorationStyle: "solid",
+    letterSpacing: 0.3,
+  },
   progress: {
     fontSize: 16,
     color: colors.textSecondary,
     fontVariant: ["tabular-nums"],
   },
+  branding: {
+    position: "absolute",
+    bottom: 18,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+    color: "rgba(255,255,255,0.55)",
+  },
+  controlsLocked: {
+    opacity: 0.35,
+  },
+  hardcoreToggle: {
+    alignItems: "center",
+    gap: 4,
+  },
+  hardcoreLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: colors.textSecondary,
+  },
+  hardcoreLabelActive: {
+    color: "#ff4444",
+  },
+  hardcoreDots: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  hardcoreDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+  },
+  hardcoreDotActive: {
+    backgroundColor: colors.textSecondary,
+  },
+  dropdownBackdrop: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 80,
+    paddingRight: 16,
+  },
+  dropdown: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 150,
+    overflow: "hidden",
+  },
+  dropdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+  },
+  dropdownItem: {
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  dropdownItemActive: {
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  dropdownCheck: {
+    fontSize: 13,
+    color: colors.primary,
+    marginLeft: 8,
+  },
   board: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 4,
-  },
-  headers: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
   },
   cardsScroll: {
     flex: 1,
@@ -379,6 +544,8 @@ const styles = StyleSheet.create({
   },
   column: {
     flex: 1,
+    justifyContent: "center",
+    paddingBottom: "12%",
   },
   divider: {
     width: 12,

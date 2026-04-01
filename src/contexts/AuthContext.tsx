@@ -20,14 +20,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [session, setSession] = useState<Session | null>(null);
 	const [initializing, setInitializing] = useState(true);
-	const [isPremium, setIsPremium] = useState(false);
+	const [isPremium, setIsPremium] = useState(true);
 	const [displayName, setDisplayName] = useState<string | null>(null);
 
 	const refreshProfile = async (targetSession?: Session | null) => {
 		const s = targetSession ?? session;
 		const userId = s?.user?.id;
 		if (!userId) {
-			setIsPremium(false);
+			setIsPremium(true);
 			setDisplayName(null);
 			return;
 		}

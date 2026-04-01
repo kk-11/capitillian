@@ -3,8 +3,9 @@ import { COUNTRIES, type Country } from "../data/countries";
 
 export const BOARD_SIZE = 5;
 export const BATCH_SIZE = 3;
-export const TARGET_PAIRS = 3;
+export const MAX_PAIRS_PER_ROUND = 1000; // cap for large pools
 export const ROUND_SECONDS = 300;
+export const PRACTICE_PAIRS = 2;
 
 export type GameStatus = "idle" | "ready" | "playing" | "won" | "timeout";
 
@@ -13,6 +14,7 @@ type WrongFlash = { leftIndex: number; rightIndex: number };
 type MatchFlash = { code: string };
 
 export type GameEngineState = {
+  roundId: number;
   status: GameStatus;
   leftCards: Country[];
   rightCards: Country[];
@@ -23,9 +25,11 @@ export type GameEngineState = {
   wrongCountries: Country[];   // deduped countries involved in wrong guesses
   pairsMatched: number;
   wrongGuesses: number;
-  secondsLeft: number;
+  secondsLeft: number;   // counts down (free) or up (premium)
   targetPairs: number;
   hasTimer: boolean;
+  countUp: boolean;      // true = premium stopwatch, false = free countdown
+  isHardcore: boolean;
   pool: Country[];
 };
 
@@ -34,7 +38,7 @@ export type GameEngineState = {
 // ---------------------------------------------------------------------------
 
 type Action =
-  | { type: "START"; shuffled: Country[]; targetPairs: number; hasTimer: boolean }
+  | { type: "START"; shuffled: Country[]; targetPairs: number; hasTimer: boolean; countUp: boolean; isHardcore: boolean }
   | { type: "BEGIN" }
   | { type: "SELECT"; side: "left" | "right"; index: number }
   | { type: "MATCH_START"; code: string }
@@ -61,6 +65,7 @@ function shuffle<T>(arr: T[]): T[] {
 // ---------------------------------------------------------------------------
 
 const INITIAL_STATE: GameEngineState = {
+  roundId: 0,
   status: "idle",
   leftCards: [],
   rightCards: [],
@@ -72,8 +77,10 @@ const INITIAL_STATE: GameEngineState = {
   pairsMatched: 0,
   wrongGuesses: 0,
   secondsLeft: ROUND_SECONDS,
-  targetPairs: TARGET_PAIRS,
+  targetPairs: MAX_PAIRS_PER_ROUND,
   hasTimer: true,
+  countUp: false,
+  isHardcore: false,
   pool: [],
 };
 
@@ -84,18 +91,21 @@ const INITIAL_STATE: GameEngineState = {
 function reducer(state: GameEngineState, action: Action): GameEngineState {
   switch (action.type) {
     case "START": {
-      const { shuffled, targetPairs, hasTimer } = action;
+      const { shuffled, targetPairs, hasTimer, countUp, isHardcore } = action;
       const size = Math.min(BOARD_SIZE, shuffled.length);
       const boardCountries = shuffled.slice(0, size);
       return {
         ...INITIAL_STATE,
-        status: "ready",          // board visible, timer not yet running
+        roundId: state.roundId + 1,
+        status: "ready",
         leftCards: boardCountries,
         rightCards: shuffle(boardCountries),
         pool: shuffled.slice(size),
         targetPairs,
         hasTimer,
-        secondsLeft: ROUND_SECONDS,
+        countUp,
+        isHardcore,
+        secondsLeft: countUp ? 0 : ROUND_SECONDS,
       };
     }
 
@@ -187,11 +197,17 @@ function reducer(state: GameEngineState, action: Action): GameEngineState {
     }
 
     case "CLEAR_WRONG": {
+      if (state.isHardcore) {
+        return { ...state, wrongFlash: null, status: "timeout" };
+      }
       return { ...state, wrongFlash: null };
     }
 
     case "TICK": {
       if (!state.hasTimer) return state;
+      if (state.countUp) {
+        return { ...state, secondsLeft: state.secondsLeft + 1 };
+      }
       const secondsLeft = state.secondsLeft - 1;
       if (secondsLeft <= 0) {
         return { ...state, secondsLeft: 0, status: "timeout" };
@@ -245,17 +261,18 @@ export function useGameEngine() {
 
   // Prepare the board. Timer only starts when the player taps their first card.
   const startGame = useCallback(
-    (customPool?: Country[]) => {
+    (pool: Country[] = COUNTRIES, isPremium = false, isPractice = false, isHardcore = false) => {
       stopTimer();
       blockedRef.current = false;
-      const pool = customPool ?? COUNTRIES;
       const shuffled = shuffle(pool);
-      const isPractice = !!customPool;
       dispatch({
         type: "START",
         shuffled,
-        targetPairs: isPractice ? pool.length : TARGET_PAIRS,
-        hasTimer: !isPractice,
+        // targetPairs: isPractice ? pool.length : (isPremium ? pool.length : PRACTICE_PAIRS),
+      targetPairs: 2, // TODO: remove test limit
+        hasTimer: true,
+        countUp: isPremium && !isPractice,
+        isHardcore: isHardcore && !isPractice,
       });
     },
     [stopTimer],

@@ -4,6 +4,8 @@ export type Country = {
   capital: string;
   flag: string; // emoji
   continent: string;
+  lat: number;
+  lng: number;
 };
 
 export function getFaceValue(
@@ -262,3 +264,46 @@ export const COUNTRIES: Country[] = [
   ...SOUTH_AMERICA,
   ...OCEANIA,
 ];
+
+// ---------------------------------------------------------------------------
+// Regions
+// ---------------------------------------------------------------------------
+
+const CARIBBEAN_CODES = new Set([
+  "AG","BS","BB","CU","DM","DO","GD","HT","JM","KN","LC","VC","TT",
+]);
+
+export type GameMode =
+  | "all"
+  | "africa"
+  | "europe"
+  | "asia"
+  | "eurasia"
+  | "oceania"
+  | "north america"
+  | "south america"
+  | "caribbean";
+
+export const MODE_LABELS: Record<GameMode, string> = {
+  all:             "All",
+  africa:          "Africa",
+  europe:          "Europe",
+  asia:            "Asia",
+  eurasia:         "Eurasia",
+  oceania:         "Oceania",
+  "north america": "N. America",
+  "south america": "S. America",
+  caribbean:       "Caribbean",
+};
+
+export const REGIONS: Record<GameMode, Country[]> = {
+  all:             COUNTRIES,
+  africa:          AFRICA,
+  europe:          EUROPE,
+  asia:            ASIA,
+  eurasia:         [...EUROPE, ...ASIA],
+  oceania:         OCEANIA,
+  "north america": NORTH_AMERICA,
+  "south america": SOUTH_AMERICA,
+  caribbean:       NORTH_AMERICA.filter(c => CARIBBEAN_CODES.has(c.code)),
+};
