@@ -19,12 +19,13 @@ import { useFaceSelector } from "../game/useFaceSelector";
 import { useGameEngine, ROUND_SECONDS } from "../game/useGameEngine";
 import { useDailyLimit } from "../hooks/useDailyLimit";
 import { usePerfectStreak } from "../hooks/usePerfectStreak";
+import { useBadgeProgress } from "../hooks/useBadgeProgress";
 import FaceHeader from "../components/FaceHeader";
 import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
-import { getFaceValue, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
+import { getFaceValue, formatPopulation, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
 
 // ---------------------------------------------------------------------------
@@ -45,6 +46,91 @@ function formatCountdown(totalSeconds: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// Badge definitions
+// ---------------------------------------------------------------------------
+
+const BADGE_GROUPS: Array<{
+  mode: GameMode;
+  label: string;
+  emoji: string;
+  tiers: Array<{ icon: string; name: string; req: number; legendary?: boolean }>;
+}> = [
+  {
+    mode: "all", label: "World", emoji: "🌍",
+    tiers: [
+      { icon: "🥉", name: "Explorer",   req: 1   },
+      { icon: "🥈", name: "Scholar",    req: 10  },
+      { icon: "🥇", name: "Master",     req: 25  },
+      { icon: "⭐", name: "LEGENDARY",  req: 100, legendary: true },
+    ],
+  },
+  {
+    mode: "africa", label: "Africa", emoji: "🌍",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "asia", label: "Asia", emoji: "🌏",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "europe", label: "Europe", emoji: "⚜️",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "eurasia", label: "Eurasia", emoji: "🌐",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "north america", label: "N. America", emoji: "🌎",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "south america", label: "S. America", emoji: "🌎",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "oceania", label: "Oceania", emoji: "🏝️",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "caribbean", label: "Caribbean", emoji: "🏖️",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -54,6 +140,7 @@ export default function GameScreen() {
   const { state, startGame, selectCard } = useGameEngine();
   const { hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
   const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
+  const { counts: badgeCounts, increment: incrementBadge } = useBadgeProgress();
   const [gameMode, setGameMode] = useState<GameMode>("all");
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [isHardcore, setIsHardcore] = useState(false);
@@ -66,10 +153,13 @@ export default function GameScreen() {
   const [focusedCountry, setFocusedCountry] = useState<Country | null>(null);
   const [freePalestine, setFreePalestine] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [listExpandedCode, setListExpandedCode] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const currentPageRef = useRef(0);
   const translateX = useRef(new Animated.Value(0)).current;
+  const [globeCountry, setGlobeCountry] = useState<Country | null>(null);
+  const [highlightCode, setHighlightCode] = useState<string | null>(null);
   // Track game-just-finished synchronously so the countdown appears immediately
   // without waiting for the async AsyncStorage write in recordPlay.
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
@@ -94,13 +184,16 @@ export default function GameScreen() {
     }
     if (ended && !recordedRef.current) {
       recordedRef.current = true;
-      // Only record streak for real (non-practice) games
       if (state.hasTimer) {
         recordStreakResult(state.wrongGuesses);
       }
       if (!isPremium && state.hasTimer) {
         setGameEndedAsFree(true);
         recordPlay();
+      }
+      // Badge progress: perfect hardcore timed round
+      if (state.status === "won" && isHardcore && state.wrongGuesses === 0 && state.hasTimer) {
+        incrementBadge(gameMode);
       }
     }
     if (state.status === "ready" || state.status === "idle") {
@@ -131,7 +224,7 @@ export default function GameScreen() {
   const handleCardPress = (side: "left" | "right", index: number) => {
     const country = side === "left" ? leftCards[index] : rightCards[index];
     console.log("[Globe] card pressed:", side, index, country?.name, country?.lat, country?.lng);
-    if (country) setFocusedCountry(country);
+    if (country) { setFocusedCountry(country); setHighlightCode(country.code); }
     selectCard(side, index);
   };
 
@@ -145,6 +238,17 @@ export default function GameScreen() {
   const showCountdown  = !isPremium && (hasPlayedToday || gameEndedAsFree);
   const canPlayAgain   = isPremium;
   const canPractice    = wrongCountries.length > 1 && (isPremium || !hasPracticedToday);
+
+  const handleGlobeTap = (lat: number, lon: number) => {
+    let nearest = COUNTRIES[0];
+    let minDist = Infinity;
+    for (const c of COUNTRIES) {
+      const d = (c.lat - lat) ** 2 + (c.lng - lon) ** 2;
+      if (d < minDist) { minDist = d; nearest = c; }
+    }
+    setGlobeCountry(nearest);
+    setHighlightCode(nearest.code);
+  };
 
   const goToPage = (page: number) => {
     currentPageRef.current = page;
@@ -160,20 +264,21 @@ export default function GameScreen() {
   const swipeGesture = useMemo(() =>
     Gesture.Pan()
       .runOnJS(true)
+      .enabled(currentPage !== 1)
       .activeOffsetX([-15, 15])
       .failOffsetY([-15, 15])
       .onUpdate((e) => {
         const base = -currentPageRef.current * SCREEN_WIDTH;
-        const clamped = Math.max(-2 * SCREEN_WIDTH, Math.min(0, base + e.translationX));
+        const clamped = Math.max(-3 * SCREEN_WIDTH, Math.min(0, base + e.translationX));
         translateX.setValue(clamped);
       })
       .onEnd((e) => {
         const page = currentPageRef.current;
-        if (e.translationX < -50 && page < 2) goToPage(page + 1);
+        if (e.translationX < -50 && page < 3) goToPage(page + 1);
         else if (e.translationX > 50 && page > 0) goToPage(page - 1);
         else goToPage(page);
       }),
-  []);
+  [currentPage]);
 
   // Group all countries by continent for the list page
   const continents = Array.from(new Set(COUNTRIES.map(c => c.continent))).sort();
@@ -186,13 +291,17 @@ export default function GameScreen() {
         targetLat={focusedCountry?.lat}
         targetLng={focusedCountry?.lng}
         interactive={currentPage === 1}
+        onSwipeLeft={() => goToPage(2)}
+        onSwipeRight={() => goToPage(0)}
+        onGlobeTap={handleGlobeTap}
+        highlightCode={highlightCode}
       />
       {isHardcore && currentPage === 0 && <HardcoreVignette />}
 
       {/* ------------------------------------------------------------------ */}
       {/* Animated pager row — slides horizontally, globe shows through      */}
       {/* ------------------------------------------------------------------ */}
-      <Animated.View style={[styles.pagerRow, { transform: [{ translateX }] }]}>
+      <Animated.View style={[styles.pagerRow, { transform: [{ translateX }] }]} pointerEvents="box-none">
         {/* ---------------------------------------- */}
         {/* Page 1: Game UI                          */}
         {/* ---------------------------------------- */}
@@ -437,18 +546,107 @@ export default function GameScreen() {
                   <Text style={styles.continentHeader}>{continent}</Text>
                   {COUNTRIES.filter(c => c.continent === continent)
                     .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((country) => (
-                      <View key={country.code} style={styles.countryRow}>
-                        <Text style={styles.countryFlag}>{country.flag}</Text>
-                        <View style={styles.countryText}>
-                          <Text style={styles.countryName}>{country.name}</Text>
-                          <Text style={styles.countryCapital}>{country.capital}</Text>
-                        </View>
-                        <Text style={styles.countryCode}>{country.code}</Text>
-                      </View>
-                    ))}
+                    .map((country) => {
+                      const expanded = listExpandedCode === country.code;
+                      return (
+                        <TouchableOpacity
+                          key={country.code}
+                          style={[styles.countryRow, expanded && styles.countryRowExpanded]}
+                          onPress={() => {
+                            const isExpanding = !expanded;
+                            setListExpandedCode(isExpanding ? country.code : null);
+                            if (isExpanding) {
+                              setFocusedCountry(country);
+                              setHighlightCode(country.code);
+                            }
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.countryRowMain}>
+                            <Text style={styles.countryFlag}>{country.flag}</Text>
+                            <View style={styles.countryText}>
+                              <Text style={styles.countryName}>{country.name}</Text>
+                              <Text style={styles.countryCapital}>{country.capital}</Text>
+                            </View>
+                            <View style={styles.countryRight}>
+                              <Text style={styles.countryPop}>{formatPopulation(country.population)}</Text>
+                              <Text style={styles.countryCode}>{country.code}</Text>
+                            </View>
+                          </View>
+                          {expanded && (
+                            <View style={styles.countryDetail}>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Population</Text>
+                                <Text style={styles.detailValue}>{country.population.toLocaleString()}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Capital</Text>
+                                <Text style={styles.detailValue}>{country.capital}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Continent</Text>
+                                <Text style={styles.detailValue}>{country.continent}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Code</Text>
+                                <Text style={styles.detailValue}>{country.code}</Text>
+                              </View>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
                 </View>
               ))}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+        {/* ---------------------------------------- */}
+        {/* Page 4: Goals / Badges                   */}
+        {/* ---------------------------------------- */}
+        <View style={styles.page}>
+          <SafeAreaView style={styles.safe}>
+            <Text style={styles.listTitle}>Goals</Text>
+            <Text style={styles.goalsSubtitle}>Perfect · Hardcore · No mistakes</Text>
+            <ScrollView
+              style={styles.listScroll}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {BADGE_GROUPS.map(({ mode, label, emoji, tiers }) => {
+                const count = badgeCounts[mode] ?? 0;
+                return (
+                  <View key={mode} style={styles.badgeGroup}>
+                    <Text style={styles.continentHeader}>{emoji} {label}</Text>
+                    {tiers.map(({ icon, name, req, legendary }) => {
+                      const unlocked = count >= req;
+                      const progress = Math.min(count, req) / req;
+                      return (
+                        <View
+                          key={name}
+                          style={[styles.badgeRow, unlocked && styles.badgeRowUnlocked, legendary && styles.badgeRowLegendary]}
+                        >
+                          <Text style={[styles.badgeTierIcon, unlocked && styles.badgeTierIconUnlocked]}>{icon}</Text>
+                          <View style={styles.badgeInfo}>
+                            <View style={styles.badgeNameRow}>
+                              <Text style={[styles.badgeName, unlocked && styles.badgeNameUnlocked, legendary && styles.badgeNameLegendary]}>
+                                {name}
+                              </Text>
+                              {unlocked && <Text style={styles.badgeCheck}>✓</Text>}
+                            </View>
+                            <View style={styles.badgeBarBg}>
+                              <View style={[styles.badgeBarFill, { width: `${progress * 100}%` as any }, legendary && styles.badgeBarLegendary]} />
+                            </View>
+                          </View>
+                          <Text style={[styles.badgeCount, unlocked && styles.badgeCountUnlocked]}>
+                            {count}/{req}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
             </ScrollView>
           </SafeAreaView>
         </View>
@@ -459,11 +657,11 @@ export default function GameScreen() {
       {/* ------------------------------------------------------------------ */}
       <TouchableOpacity
         style={styles.dotsContainer}
-        onPress={() => goToPage((currentPage + 1) % 3)}
+        onPress={() => goToPage((currentPage + 1) % 4)}
         activeOpacity={1}
         hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
       >
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <View key={i} style={[styles.dot, currentPage === i && styles.dotActive]} />
         ))}
       </TouchableOpacity>
@@ -506,6 +704,24 @@ export default function GameScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* Globe country info panel */}
+      {currentPage === 1 && globeCountry && (
+        <TouchableOpacity
+          style={styles.globePanel}
+          onPress={() => setGlobeCountry(null)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.globePanelRow}>
+            <Text style={styles.globePanelFlag}>{globeCountry.flag}</Text>
+            <View style={styles.globePanelText}>
+              <Text style={styles.globePanelName}>{globeCountry.name}</Text>
+              <Text style={styles.globePanelCapital}>{globeCountry.capital}</Text>
+            </View>
+            <Text style={styles.globePanelContinent}>{globeCountry.continent}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
       <PremiumDialog
         visible={showPremiumDialog}
         onDismiss={() => setShowPremiumDialog(false)}
@@ -538,7 +754,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    width: SCREEN_WIDTH * 3,
+    width: SCREEN_WIDTH * 4,
     flexDirection: "row",
   },
   page: {
@@ -617,13 +833,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   countryRow: {
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    marginBottom: 4,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  countryRowExpanded: {
+    borderColor: colors.border,
+  },
+  countryRowMain: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    marginBottom: 4,
     gap: 12,
   },
   countryFlag: {
@@ -644,11 +868,67 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
+  countryRight: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  countryPop: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
   countryCode: {
     fontSize: 11,
     fontWeight: "700",
     color: colors.textSecondary,
     letterSpacing: 0.5,
+  },
+  countryDetail: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  // Globe country panel
+  globePanel: {
+    position: "absolute",
+    bottom: 80,
+    left: 16,
+    right: 16,
+    backgroundColor: "rgba(20,20,24,0.92)",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+  },
+  globePanelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  globePanelFlag: {
+    fontSize: 36,
+  },
+  globePanelText: {
+    flex: 1,
+    gap: 3,
+  },
+  globePanelName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  globePanelCapital: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  globePanelContinent: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   topBar: {
     flexDirection: "row",
@@ -961,6 +1241,102 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 13,
     fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  // Goals page
+  goalsSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    color: colors.textSecondary,
+    paddingHorizontal: 20,
+    paddingBottom: 4,
+    textTransform: "uppercase",
+  },
+  badgeGroup: {
+    marginBottom: 8,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    marginBottom: 4,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "transparent",
+    opacity: 0.55,
+  },
+  badgeRowUnlocked: {
+    opacity: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  badgeRowLegendary: {
+    borderColor: "rgba(255,200,50,0.35)",
+    backgroundColor: "rgba(30,22,8,0.9)",
+  },
+  badgeTierIcon: {
+    fontSize: 24,
+    width: 32,
+    textAlign: "center",
+    opacity: 0.4,
+  },
+  badgeTierIconUnlocked: {
+    opacity: 1,
+  },
+  badgeInfo: {
+    flex: 1,
+    gap: 6,
+  },
+  badgeNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  badgeName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
+  badgeNameUnlocked: {
+    color: colors.textPrimary,
+  },
+  badgeNameLegendary: {
+    color: "#ffd700",
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  badgeCheck: {
+    fontSize: 12,
+    color: "#4ade80",
+    fontWeight: "800",
+  },
+  badgeBarBg: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  badgeBarFill: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.35)",
+    borderRadius: 2,
+  },
+  badgeBarLegendary: {
+    backgroundColor: "#ffd700",
+  },
+  badgeCount: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    opacity: 0.5,
+    minWidth: 36,
+    textAlign: "right",
+  },
+  badgeCountUnlocked: {
+    opacity: 1,
     color: colors.textPrimary,
   },
 });
