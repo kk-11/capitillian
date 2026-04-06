@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,14 @@ import {
   ScrollView,
   Modal,
   TouchableWithoutFeedback,
+  Dimensions,
+  Animated,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../contexts/AuthContext";
+import { usePremium } from "../contexts/PremiumContext";
 import { useFaceSelector } from "../game/useFaceSelector";
 import { useGameEngine, ROUND_SECONDS } from "../game/useGameEngine";
 import { useDailyLimit } from "../hooks/useDailyLimit";
@@ -19,7 +24,7 @@ import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
-import { getFaceValue, REGIONS, MODE_LABELS, type GameMode, type Country } from "../data/countries";
+import { getFaceValue, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
 
 // ---------------------------------------------------------------------------
@@ -44,7 +49,7 @@ function formatCountdown(totalSeconds: number): string {
 // ---------------------------------------------------------------------------
 
 export default function GameScreen() {
-  const { isPremium } = useAuth();
+  const { isPremium, purchase, restorePurchases } = usePremium();
   const { left, right, cycleLeft, cycleRight } = useFaceSelector(isPremium);
   const { state, startGame, selectCard } = useGameEngine();
   const { hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
@@ -62,6 +67,9 @@ export default function GameScreen() {
   const [freePalestine, setFreePalestine] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const currentPageRef = useRef(0);
+  const translateX = useRef(new Animated.Value(0)).current;
   // Track game-just-finished synchronously so the countdown appears immediately
   // without waiting for the async AsyncStorage write in recordPlay.
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
@@ -138,58 +146,338 @@ export default function GameScreen() {
   const canPlayAgain   = isPremium;
   const canPractice    = wrongCountries.length > 1 && (isPremium || !hasPracticedToday);
 
+  const goToPage = (page: number) => {
+    currentPageRef.current = page;
+    setCurrentPage(page);
+    Animated.spring(translateX, {
+      toValue: -page * SCREEN_WIDTH,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 12,
+    }).start();
+  };
+
+  const swipeGesture = useMemo(() =>
+    Gesture.Pan()
+      .runOnJS(true)
+      .activeOffsetX([-15, 15])
+      .failOffsetY([-15, 15])
+      .onUpdate((e) => {
+        const base = -currentPageRef.current * SCREEN_WIDTH;
+        const clamped = Math.max(-2 * SCREEN_WIDTH, Math.min(0, base + e.translationX));
+        translateX.setValue(clamped);
+      })
+      .onEnd((e) => {
+        const page = currentPageRef.current;
+        if (e.translationX < -50 && page < 2) goToPage(page + 1);
+        else if (e.translationX > 50 && page > 0) goToPage(page - 1);
+        else goToPage(page);
+      }),
+  []);
+
+  // Group all countries by continent for the list page
+  const continents = Array.from(new Set(COUNTRIES.map(c => c.continent))).sort();
+
   return (
+    <GestureDetector gesture={swipeGesture}>
     <View style={styles.container}>
+      {/* Single globe — fixed background, never re-mounts */}
       <Globe
         targetLat={focusedCountry?.lat}
         targetLng={focusedCountry?.lng}
+        interactive={currentPage === 1}
       />
-      {isHardcore && <HardcoreVignette />}
-      <SafeAreaView style={styles.safe}>
-      {/* ------------------------------------------------------------------ */}
-      {/* Top bar: timer + progress                                           */}
-      {/* ------------------------------------------------------------------ */}
-      <View style={styles.topBar}>
-        {hasTimer ? (
-          <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
-        ) : (
-          <Text style={styles.practiceLabel}>PRACTICE</Text>
-        )}
-        <View style={styles.topRight}>
-          <TouchableOpacity
-            style={styles.hardcoreToggle}
-            onPress={() => {
-              const next = !isHardcore;
-              setIsHardcore(next);
-              startGame(REGIONS[gameMode], isPremium, false, next);
-            }}
-            activeOpacity={0.7}
-            disabled={status === "playing"}
-          >
-            <Text style={[styles.hardcoreLabel, isHardcore && styles.hardcoreLabelActive, status === "playing" && styles.controlsLocked]}>
-              {isHardcore ? "💔 HARDCORE" : "EASY"}
-            </Text>
-            <View style={styles.hardcoreDots}>
-              <View style={[styles.hardcoreDot, !isHardcore && styles.hardcoreDotActive]} />
-              <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
-            </View>
-          </TouchableOpacity>
-          {isPremium ? (
-            <TouchableOpacity
-              onPress={() => setShowModeDropdown(true)}
-              activeOpacity={0.7}
-              disabled={status === "playing"}
-            >
-              <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
-                {MODE_LABELS[gameMode]}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-          <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
-        </View>
-      </View>
+      {isHardcore && currentPage === 0 && <HardcoreVignette />}
 
-      {/* Mode dropdown */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Animated pager row — slides horizontally, globe shows through      */}
+      {/* ------------------------------------------------------------------ */}
+      <Animated.View style={[styles.pagerRow, { transform: [{ translateX }] }]}>
+        {/* ---------------------------------------- */}
+        {/* Page 1: Game UI                          */}
+        {/* ---------------------------------------- */}
+        <View style={styles.page}>
+          <SafeAreaView style={styles.safe}>
+          <View style={styles.topBar}>
+            {hasTimer ? (
+              <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
+            ) : (
+              <Text style={styles.practiceLabel}>PRACTICE</Text>
+            )}
+            <View style={styles.topRight}>
+              <TouchableOpacity
+                style={styles.hardcoreToggle}
+                onPress={() => {
+                  const next = !isHardcore;
+                  setIsHardcore(next);
+                  startGame(REGIONS[gameMode], isPremium, false, next);
+                }}
+                activeOpacity={0.7}
+                disabled={status === "playing"}
+              >
+                <Text style={[styles.hardcoreLabel, isHardcore && styles.hardcoreLabelActive, status === "playing" && styles.controlsLocked]}>
+                  {isHardcore ? "💔 HARDCORE" : "EASY"}
+                </Text>
+                <View style={styles.hardcoreDots}>
+                  <View style={[styles.hardcoreDot, !isHardcore && styles.hardcoreDotActive]} />
+                  <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
+                </View>
+              </TouchableOpacity>
+              {isPremium ? (
+                <TouchableOpacity
+                  onPress={() => setShowModeDropdown(true)}
+                  activeOpacity={0.7}
+                  disabled={status === "playing"}
+                >
+                  <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
+                    {MODE_LABELS[gameMode]}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
+            </View>
+          </View>
+
+          <View style={styles.board}>
+            <ScrollView
+              style={styles.cardsScroll}
+              contentContainerStyle={styles.cardsContent}
+              scrollEnabled={false}
+            >
+              <View style={styles.cardsRow}>
+                <View style={styles.column}>
+                  <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
+                  {leftCards.map((card, i) => (
+                    <GameCard
+                      key={`left-${roundId}-${card.code}`}
+                      value={getFaceValue(card, left)}
+                      face={left}
+                      isSelected={selected?.side === "left" && selected?.index === i}
+                      isWrong={wrongFlash?.leftIndex === i}
+                      isMatched={matchFlash?.code === card.code}
+                      isSettled={pendingMatched.includes(card.code)}
+                      onPress={() => handleCardPress("left", i)}
+                      disabled={isDisabled || pendingMatched.includes(card.code)}
+                    />
+                  ))}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.column}>
+                  <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
+                  {rightCards.map((card, i) => (
+                    <GameCard
+                      key={`right-${roundId}-${card.code}`}
+                      value={getFaceValue(card, right)}
+                      face={right}
+                      isSelected={selected?.side === "right" && selected?.index === i}
+                      isWrong={wrongFlash?.rightIndex === i}
+                      isMatched={matchFlash?.code === card.code}
+                      isSettled={pendingMatched.includes(card.code)}
+                      onPress={() => handleCardPress("right", i)}
+                      disabled={isDisabled || pendingMatched.includes(card.code)}
+                    />
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+
+          {(status === "won" || status === "timeout") && (
+            <View style={styles.overlay}>
+              <ScrollView
+                style={styles.endScroll}
+                contentContainerStyle={styles.endScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {status === "won" ? (
+                  <Text style={styles.endTitle}>Round Complete! 🎉</Text>
+                ) : (
+                  <Text style={styles.endTitle}>Game Over!</Text>
+                )}
+
+                <View style={styles.statsBlock}>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Pairs matched</Text>
+                    <Text style={styles.statValue}>{pairsMatched} / {targetPairs}</Text>
+                  </View>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Wrong guesses</Text>
+                    <Text style={styles.statValue}>{wrongGuesses}</Text>
+                  </View>
+                  {hasTimer && (
+                    <View style={styles.statRow}>
+                      <Text style={styles.statLabel}>Time taken</Text>
+                      <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
+                    </View>
+                  )}
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Perfect streak</Text>
+                    <Text style={styles.statValue}>
+                      {perfectStreak} {perfectStreak === 1 ? "day" : "days"}
+                    </Text>
+                  </View>
+                </View>
+
+                {canPlayAgain ? (
+                  <TouchableOpacity
+                    style={styles.startButton}
+                    onPress={() => { startGame(REGIONS[gameMode], isPremium, false, isHardcore); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.startButtonText}>
+                      {status === "won" ? "Play Again" : "Try Again"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.countdownBlock}>
+                    <Text style={styles.countdownLabel}>Next game in</Text>
+                    <Text style={styles.countdownValue}>
+                      {formatCountdown(showCountdown ? countdownSecs : 0)}
+                    </Text>
+                  </View>
+                )}
+
+                {canPractice && (
+                  <TouchableOpacity
+                    style={styles.practiceButton}
+                    onPress={() => {
+                      setExpandedCode(null);
+                      if (!isPremium) recordPractice();
+                      startGame(wrongCountries, isPremium, true);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.practiceButtonText}>
+                      Practice {wrongCountries.length} Wrong Answers
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {!isPremium && (
+                  <TouchableOpacity
+                    style={styles.upgradeButton}
+                    onPress={() => setShowPremiumDialog(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.upgradeText}>✦ Unlock Unlimited — €5</Text>
+                  </TouchableOpacity>
+                )}
+
+                {wrongCountries.length > 0 && (
+                  <View style={styles.wrongSection}>
+                    <Text style={styles.wrongSectionTitle}>
+                      Wrong Answers ({wrongCountries.length})
+                    </Text>
+                    {wrongCountries.map((country) => {
+                      const expanded = expandedCode === country.code;
+                      return (
+                        <TouchableOpacity
+                          key={country.code}
+                          style={[styles.wrongItem, expanded && styles.wrongItemExpanded]}
+                          onPress={() => setExpandedCode(expanded ? null : country.code)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.wrongItemRow}>
+                            <Text style={styles.wrongItemFlag}>{country.flag}</Text>
+                            <View style={styles.wrongItemText}>
+                              <Text style={styles.wrongItemName}>{country.name}</Text>
+                              <Text style={styles.wrongItemCapital}>{country.capital}</Text>
+                            </View>
+                            <Text style={styles.wrongItemChevron}>{expanded ? "▲" : "▼"}</Text>
+                          </View>
+                          {expanded && (
+                            <View style={styles.wrongItemDetail}>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Capital</Text>
+                                <Text style={styles.detailValue}>{country.capital}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Continent</Text>
+                                <Text style={styles.detailValue}>{country.continent}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Code</Text>
+                                <Text style={styles.detailValue}>{country.code}</Text>
+                              </View>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          )}
+          </SafeAreaView>
+        </View>
+
+        {/* ---------------------------------------- */}
+        {/* Page 2: Globe (transparent — globe       */}
+        {/* background shows through & is now        */}
+        {/* interactive)                             */}
+        {/* ---------------------------------------- */}
+        <View style={styles.page} pointerEvents="none" />
+
+        {/* ---------------------------------------- */}
+        {/* Page 3: Countries list                   */}
+        {/* ---------------------------------------- */}
+        <View style={styles.page}>
+          <SafeAreaView style={styles.safe}>
+            <Text style={styles.listTitle}>All Countries</Text>
+            <ScrollView
+              style={styles.listScroll}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {continents.map((continent) => (
+                <View key={continent}>
+                  <Text style={styles.continentHeader}>{continent}</Text>
+                  {COUNTRIES.filter(c => c.continent === continent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((country) => (
+                      <View key={country.code} style={styles.countryRow}>
+                        <Text style={styles.countryFlag}>{country.flag}</Text>
+                        <View style={styles.countryText}>
+                          <Text style={styles.countryName}>{country.name}</Text>
+                          <Text style={styles.countryCapital}>{country.capital}</Text>
+                        </View>
+                        <Text style={styles.countryCode}>{country.code}</Text>
+                      </View>
+                    ))}
+                </View>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Animated.View>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Page dots                                                           */}
+      {/* ------------------------------------------------------------------ */}
+      <TouchableOpacity
+        style={styles.dotsContainer}
+        onPress={() => goToPage((currentPage + 1) % 3)}
+        activeOpacity={1}
+        hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
+      >
+        {[0, 1, 2].map((i) => (
+          <View key={i} style={[styles.dot, currentPage === i && styles.dotActive]} />
+        ))}
+      </TouchableOpacity>
+
+      {/* Branding */}
+      <TouchableOpacity onPress={() => setFreePalestine(f => !f)} activeOpacity={0.7} style={styles.brandingTouchable}>
+        {freePalestine ? (
+          <Text style={styles.branding}>🇵🇸 free palestine</Text>
+        ) : (
+          <Text style={styles.branding}>{GLOBE_FRAMES[globeFrame]} capitillian</Text>
+        )}
+      </TouchableOpacity>
+
+      {/* Mode dropdown modal */}
       <Modal visible={showModeDropdown} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setShowModeDropdown(false)}>
           <View style={styles.dropdownBackdrop}>
@@ -218,214 +506,20 @@ export default function GameScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Main board                                                          */}
-      {/* ------------------------------------------------------------------ */}
-      <View style={styles.board}>
-        <ScrollView
-          style={styles.cardsScroll}
-          contentContainerStyle={styles.cardsContent}
-          scrollEnabled={false}
-        >
-          <View style={styles.cardsRow}>
-            {/* Left column */}
-            <View style={styles.column}>
-              <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
-              {leftCards.map((card, i) => (
-                <GameCard
-                  key={`left-${roundId}-${card.code}`}
-                  value={getFaceValue(card, left)}
-                  face={left}
-                  isSelected={
-                    selected?.side === "left" && selected?.index === i
-                  }
-                  isWrong={wrongFlash?.leftIndex === i}
-                  isMatched={matchFlash?.code === card.code}
-                  isSettled={pendingMatched.includes(card.code)}
-                  onPress={() => handleCardPress("left", i)}
-                  disabled={isDisabled || pendingMatched.includes(card.code)}
-                />
-              ))}
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Right column */}
-            <View style={styles.column}>
-              <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
-              {rightCards.map((card, i) => (
-                <GameCard
-                  key={`right-${roundId}-${card.code}`}
-                  value={getFaceValue(card, right)}
-                  face={right}
-                  isSelected={
-                    selected?.side === "right" && selected?.index === i
-                  }
-                  isWrong={wrongFlash?.rightIndex === i}
-                  isMatched={matchFlash?.code === card.code}
-                  isSettled={pendingMatched.includes(card.code)}
-                  onPress={() => handleCardPress("right", i)}
-                  disabled={isDisabled || pendingMatched.includes(card.code)}
-                />
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* End overlay — won or timeout                                        */}
-      {/* ------------------------------------------------------------------ */}
-      {(status === "won" || status === "timeout") && (
-        <View style={styles.overlay}>
-          <ScrollView
-            style={styles.endScroll}
-            contentContainerStyle={styles.endScrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Title */}
-            {status === "won" ? (
-              <Text style={styles.endTitle}>Round Complete! 🎉</Text>
-            ) : (
-              <Text style={styles.endTitle}>Game Over!</Text>
-            )}
-
-            {/* Stats */}
-            <View style={styles.statsBlock}>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Pairs matched</Text>
-                <Text style={styles.statValue}>{pairsMatched} / {targetPairs}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Wrong guesses</Text>
-                <Text style={styles.statValue}>{wrongGuesses}</Text>
-              </View>
-              {hasTimer && (
-                <View style={styles.statRow}>
-                  <Text style={styles.statLabel}>Time taken</Text>
-                  <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
-                </View>
-              )}
-              <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Perfect streak</Text>
-                <Text style={styles.statValue}>
-                  {perfectStreak} {perfectStreak === 1 ? "day" : "days"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Actions — premium vs free */}
-            {canPlayAgain ? (
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => { startGame(REGIONS[gameMode], isPremium, false, isHardcore); }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.startButtonText}>
-                  {status === "won" ? "Play Again" : "Try Again"}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.countdownBlock}>
-                <Text style={styles.countdownLabel}>Next game in</Text>
-                <Text style={styles.countdownValue}>
-                  {formatCountdown(showCountdown ? countdownSecs : 0)}
-                </Text>
-              </View>
-            )}
-
-            {canPractice && (
-              <TouchableOpacity
-                style={styles.practiceButton}
-                onPress={() => {
-                  setExpandedCode(null);
-                  if (!isPremium) recordPractice();
-                  startGame(wrongCountries, isPremium, true);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.practiceButtonText}>
-                  Practice {wrongCountries.length} Wrong Answers
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Upsell CTA for free users */}
-            {!isPremium && (
-              <TouchableOpacity
-                style={styles.upgradeButton}
-                onPress={() => setShowPremiumDialog(true)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.upgradeText}>✦ Unlock Unlimited — €5</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Wrong answers list */}
-            {wrongCountries.length > 0 && (
-              <View style={styles.wrongSection}>
-                <Text style={styles.wrongSectionTitle}>
-                  Wrong Answers ({wrongCountries.length})
-                </Text>
-                {wrongCountries.map((country) => {
-                  const expanded = expandedCode === country.code;
-                  return (
-                    <TouchableOpacity
-                      key={country.code}
-                      style={[styles.wrongItem, expanded && styles.wrongItemExpanded]}
-                      onPress={() => setExpandedCode(expanded ? null : country.code)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.wrongItemRow}>
-                        <Text style={styles.wrongItemFlag}>{country.flag}</Text>
-                        <View style={styles.wrongItemText}>
-                          <Text style={styles.wrongItemName}>{country.name}</Text>
-                          <Text style={styles.wrongItemCapital}>{country.capital}</Text>
-                        </View>
-                        <Text style={styles.wrongItemChevron}>{expanded ? "▲" : "▼"}</Text>
-                      </View>
-                      {expanded && (
-                        <View style={styles.wrongItemDetail}>
-                          <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Capital</Text>
-                            <Text style={styles.detailValue}>{country.capital}</Text>
-                          </View>
-                          <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Continent</Text>
-                            <Text style={styles.detailValue}>{country.continent}</Text>
-                          </View>
-                          <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Code</Text>
-                            <Text style={styles.detailValue}>{country.code}</Text>
-                          </View>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      )}
-      <TouchableOpacity onPress={() => setFreePalestine(f => !f)} activeOpacity={0.7} style={styles.brandingTouchable}>
-        {freePalestine ? (
-          <Text style={styles.branding}>🇵🇸 free palestine</Text>
-        ) : (
-          <Text style={styles.branding}>{GLOBE_FRAMES[globeFrame]} capitillian</Text>
-        )}
-      </TouchableOpacity>
-    </SafeAreaView>
-
-    <PremiumDialog
-      visible={showPremiumDialog}
-      onDismiss={() => setShowPremiumDialog(false)}
-      onPurchase={() => {
-        // TODO: wire to expo-in-app-purchases or RevenueCat
-        setShowPremiumDialog(false);
-      }}
-    />
+      <PremiumDialog
+        visible={showPremiumDialog}
+        onDismiss={() => setShowPremiumDialog(false)}
+        onPurchase={async () => {
+          await purchase();
+          setShowPremiumDialog(false);
+        }}
+        onRestore={async () => {
+          const didRestore = await restorePurchases();
+          if (didRestore) setShowPremiumDialog(false);
+        }}
+      />
     </View>
+    </GestureDetector>
   );
 }
 
@@ -438,9 +532,123 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  // Pager
+  pagerRow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH * 3,
+    flexDirection: "row",
+  },
+  page: {
+    width: SCREEN_WIDTH,
+    flex: 1,
+    overflow: "hidden",
+  },
   safe: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+  safeTransparent: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  // Page dots
+  dotsContainer: {
+    position: "absolute",
+    bottom: 50,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.25)",
+  },
+  dotActive: {
+    backgroundColor: "rgba(255,255,255,0.85)",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  // Globe page
+  globePageLabel: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  globePageTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.4)",
+  },
+  // Countries list page
+  listTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    color: colors.textPrimary,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  listScroll: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 80,
+  },
+  continentHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+    marginTop: 20,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  countryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    marginBottom: 4,
+    gap: 12,
+  },
+  countryFlag: {
+    fontSize: 24,
+    width: 32,
+    textAlign: "center",
+  },
+  countryText: {
+    flex: 1,
+    gap: 2,
+  },
+  countryName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  countryCapital: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  countryCode: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
   },
   topBar: {
     flexDirection: "row",

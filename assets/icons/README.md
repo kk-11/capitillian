@@ -1,5 +1,8 @@
 # App Icons
 
+https://github.com/vasturiano/react-globe.gl?tab=readme-ov-file
+https://vasturiano.github.io/react-globe.gl/example/countries-population/
+
 Each file should be a 1024×1024 PNG.
 
 | File               | Unlocked at          |

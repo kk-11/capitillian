@@ -27,9 +27,10 @@ interface PremiumDialogProps {
   visible: boolean;
   onPurchase: () => void;
   onDismiss: () => void;
+  onRestore: () => void;
 }
 
-export default function PremiumDialog({ visible, onPurchase, onDismiss }: PremiumDialogProps) {
+export default function PremiumDialog({ visible, onPurchase, onDismiss, onRestore }: PremiumDialogProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={styles.backdrop}>
@@ -58,6 +59,10 @@ export default function PremiumDialog({ visible, onPurchase, onDismiss }: Premiu
 
           <TouchableOpacity style={styles.dismissButton} onPress={onDismiss} activeOpacity={0.7}>
             <Text style={styles.dismissText}>Maybe Later</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.restoreButton} onPress={onRestore} activeOpacity={0.7}>
+            <Text style={styles.restoreText}>Restore Purchase</Text>
           </TouchableOpacity>
 
         </View>
@@ -152,5 +157,13 @@ const styles = StyleSheet.create({
   dismissText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  restoreButton: {
+    paddingVertical: 4,
+  },
+  restoreText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    opacity: 0.5,
   },
 });

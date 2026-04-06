@@ -5,6 +5,7 @@ import WebView from "react-native-webview";
 type GlobeProps = {
   targetLat?: number;
   targetLng?: number;
+  interactive?: boolean;
 };
 
 // Renders a spinning textured earth using 2D canvas pixel projection.
@@ -48,7 +49,7 @@ img.onload = () => {
   const d = tctx.getImageData(0, 0, 512, 256);
   texPx = d.data; texW = 512; texH = 256;
 };
-img.src = 'https://raw.githubusercontent.com/kk-11/eusi/master/src/assets/earth-night.jpg';
+img.src = 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Whole_world_-_land_and_oceans_12000.jpg';
 
 // Fixed light direction (screen space)
 const LX = -0.4, LY = 0.5, LZ = 0.77;
@@ -234,11 +235,58 @@ function draw() {
 }
 
 (function loop() { draw(); requestAnimationFrame(loop); })();
+
+// ---------------------------------------------------------------------------
+// Touch interaction (drag to rotate, pinch to zoom)
+// ---------------------------------------------------------------------------
+let isDragging = false;
+let lastTX = 0, lastTY = 0;
+let pinchDist0 = 0;
+
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    isDragging = true;
+    lastTX = e.touches[0].clientX;
+    lastTY = e.touches[0].clientY;
+    if (phase === 'spin') { phase = 'idle'; targetLon = currentLon; targetTilt = currentTilt; }
+  } else if (e.touches.length === 2) {
+    isDragging = false;
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchDist0 = Math.sqrt(dx*dx + dy*dy);
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (e.touches.length === 1 && isDragging) {
+    var dx = e.touches[0].clientX - lastTX;
+    var dy = e.touches[0].clientY - lastTY;
+    currentLon  -= dx * 0.010;
+    currentTilt -= dy * 0.010;
+    currentTilt = Math.max(-Math.PI/2, Math.min(Math.PI/2, currentTilt));
+    targetLon = currentLon; targetTilt = currentTilt;
+    lastTX = e.touches[0].clientX;
+    lastTY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if (pinchDist0 > 0) {
+      currentZoom *= dist / pinchDist0;
+      currentZoom = Math.max(0.5, Math.min(3.0, currentZoom));
+    }
+    pinchDist0 = dist;
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchend', function() { isDragging = false; });
 </script>
 </body>
 </html>`;
 
-export default function Globe({ targetLat, targetLng }: GlobeProps) {
+export default function Globe({ targetLat, targetLng, interactive = false }: GlobeProps) {
   const webviewRef = useRef<WebView>(null);
 
   // Zoom/rotate to the selected country's capital
@@ -249,7 +297,7 @@ export default function Globe({ targetLat, targetLng }: GlobeProps) {
   }, [targetLat, targetLng]);
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={styles.container} pointerEvents={interactive ? "auto" : "none"}>
       <WebView
         ref={webviewRef}
         style={styles.webview}
