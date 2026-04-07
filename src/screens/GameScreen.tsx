@@ -160,6 +160,7 @@ export default function GameScreen() {
   const translateX = useRef(new Animated.Value(0)).current;
   const [globeCountry, setGlobeCountry] = useState<Country | null>(null);
   const [highlightCode, setHighlightCode] = useState<string | null>(null);
+  const stopButtonOpacity = useRef(new Animated.Value(0)).current;
   // Track game-just-finished synchronously so the countdown appears immediately
   // without waiting for the async AsyncStorage write in recordPlay.
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
@@ -227,6 +228,14 @@ export default function GameScreen() {
     if (country) { setFocusedCountry(country); setHighlightCode(country.code); }
     selectCard(side, index);
   };
+
+  useEffect(() => {
+    Animated.timing(stopButtonOpacity, {
+      toValue: status === "playing" ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [status]);
 
   const timerColor =
     !countUp && secondsLeft < 60 ? styles.timerRed : styles.timerDefault;
@@ -308,11 +317,13 @@ export default function GameScreen() {
         <View style={styles.page}>
           <SafeAreaView style={styles.safe}>
           <View style={styles.topBar}>
-            {hasTimer ? (
-              <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
-            ) : (
-              <Text style={styles.practiceLabel}>PRACTICE</Text>
-            )}
+            <View>
+              {hasTimer ? (
+                <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
+              ) : (
+                <Text style={styles.practiceLabel}>PRACTICE</Text>
+              )}
+            </View>
             <View style={styles.topRight}>
               <TouchableOpacity
                 style={styles.hardcoreToggle}
@@ -347,7 +358,19 @@ export default function GameScreen() {
             </View>
           </View>
 
-          <View style={styles.board}>
+          <View style={[styles.board]}>
+            <Animated.View
+              style={[styles.stopButtonAbsolute, { opacity: stopButtonOpacity }]}
+              pointerEvents={status === "playing" ? "auto" : "none"}
+            >
+              <TouchableOpacity
+                onPress={() => startGame(REGIONS[gameMode], isPremium, false, isHardcore)}
+                activeOpacity={0.5}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.stopButtonText}>✕</Text>
+              </TouchableOpacity>
+            </Animated.View>
             <ScrollView
               style={styles.cardsScroll}
               contentContainerStyle={styles.cardsContent}
@@ -936,6 +959,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 10,
+  },
+  stopButtonAbsolute: {
+    zIndex: 10,
+    opacity: 0.3,
+  },
+  stopButtonText: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    letterSpacing: 0.5,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   timer: {
     fontSize: 22,

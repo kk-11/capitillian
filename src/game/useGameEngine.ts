@@ -268,8 +268,8 @@ export function useGameEngine() {
       dispatch({
         type: "START",
         shuffled,
-        // targetPairs: isPractice ? pool.length : (isPremium ? pool.length : PRACTICE_PAIRS),
-      targetPairs: 2, // TODO: remove test limit
+        targetPairs: isPractice ? pool.length : (isPremium ? pool.length : PRACTICE_PAIRS),
+      // targetPairs: 2, // TODO: remove test limit
         hasTimer: true,
         countUp: isPremium && !isPractice,
         isHardcore: isHardcore && !isPractice,
