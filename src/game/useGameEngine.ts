@@ -1,6 +1,28 @@
 import { useReducer, useRef, useEffect, useCallback } from "react";
 import { COUNTRIES, type Country } from "../data/countries";
 
+// ---------------------------------------------------------------------------
+// Persistence helpers
+// ---------------------------------------------------------------------------
+
+export type PersistedGameState = {
+  leftCodes: string[];
+  rightCodes: string[];
+  poolCodes: string[];
+  pendingMatched: string[];
+  wrongCodes: string[];
+  pairsMatched: number;
+  wrongGuesses: number;
+  secondsLeft: number;
+  targetPairs: number;
+  hasTimer: boolean;
+  countUp: boolean;
+  isHardcore: boolean;
+};
+
+const byCode = (codes: string[]): Country[] =>
+  codes.flatMap(code => { const c = COUNTRIES.find(x => x.code === code); return c ? [c] : []; });
+
 export const BOARD_SIZE = 5;
 export const BATCH_SIZE = 3;
 export const MAX_PAIRS_PER_ROUND = 1000; // cap for large pools
@@ -45,7 +67,8 @@ type Action =
   | { type: "MATCH"; code: string }
   | { type: "WRONG"; leftIndex: number; rightIndex: number }
   | { type: "CLEAR_WRONG" }
-  | { type: "TICK" };
+  | { type: "TICK" }
+  | { type: "RESTORE"; saved: PersistedGameState };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -215,6 +238,27 @@ function reducer(state: GameEngineState, action: Action): GameEngineState {
       return { ...state, secondsLeft };
     }
 
+    case "RESTORE": {
+      const { saved } = action;
+      return {
+        ...INITIAL_STATE,
+        roundId: state.roundId + 1,
+        status: "ready",
+        leftCards: byCode(saved.leftCodes),
+        rightCards: byCode(saved.rightCodes),
+        pool: byCode(saved.poolCodes),
+        pendingMatched: saved.pendingMatched,
+        wrongCountries: byCode(saved.wrongCodes),
+        pairsMatched: saved.pairsMatched,
+        wrongGuesses: saved.wrongGuesses,
+        secondsLeft: saved.secondsLeft,
+        targetPairs: saved.targetPairs,
+        hasTimer: saved.hasTimer,
+        countUp: saved.countUp,
+        isHardcore: saved.isHardcore,
+      };
+    }
+
     default:
       return state;
   }
@@ -268,15 +312,21 @@ export function useGameEngine() {
       dispatch({
         type: "START",
         shuffled,
-        targetPairs: isPractice ? pool.length : (isPremium ? pool.length : PRACTICE_PAIRS),
-      // targetPairs: 2, // TODO: remove test limit
+        targetPairs: pool.length,
+        // targetPairs:  : (isPremium ? pool.length : PRACTICE_PAIRS)
         hasTimer: true,
-        countUp: isPremium && !isPractice,
+        countUp: !isPractice,
         isHardcore: isHardcore && !isPractice,
       });
     },
     [stopTimer],
   );
+
+  const restoreGame = useCallback((saved: PersistedGameState) => {
+    stopTimer();
+    blockedRef.current = false;
+    dispatch({ type: "RESTORE", saved });
+  }, [stopTimer]);
 
   const selectCard = useCallback((side: "left" | "right", index: number) => {
     const current = stateRef.current;
@@ -328,5 +378,5 @@ export function useGameEngine() {
     }
   }, [startTimer]);
 
-  return { state, startGame, selectCard };
+  return { state, startGame, restoreGame, selectCard };
 }

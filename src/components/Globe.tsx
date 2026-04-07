@@ -183,7 +183,7 @@ function drawHighlight() {
 
 // ---------------------------------------------------------------------------
 // Animation state
-// Phases: 'spin' | 'zoom-out' | 'zoom-in' | 'idle'
+// Phases: 'spin' | 'pan' | 'idle'
 // ---------------------------------------------------------------------------
 let phase        = 'spin';
 let currentLon   = 0;
@@ -195,8 +195,7 @@ let targetTilt   = 0;
 let pendingLon   = null;
 let pendingTilt  = null;
 
-const ZOOM_IN  = 1.65;
-const ZOOM_OUT = 0.82;
+const ZOOM_IN = 1.65;
 const LX = -0.4, LY = 0.5, LZ = 0.77;
 
 function normLon(d) {
@@ -209,34 +208,27 @@ function commitPending() {
   targetLon  = pendingLon;
   targetTilt = pendingTilt;
   pendingLon = pendingTilt = null;
-  phase      = 'zoom-out';
+  phase      = 'pan';
 }
 
 window.setTarget = function(lat, lng) {
   pendingLon  = -(lng * Math.PI / 180);
   pendingTilt = -(lat * Math.PI / 180);
-  if (phase === 'spin' || phase === 'idle' || phase === 'zoom-in') {
-    commitPending();
-  }
+  commitPending();
 };
 
 function updateAnim() {
   if (phase === 'spin') { currentLon += 0.004; return; }
-  if (phase === 'zoom-out') {
-    currentZoom += (ZOOM_OUT - currentZoom) * 0.13;
-    if (Math.abs(currentZoom - ZOOM_OUT) < 0.012) {
-      currentZoom = ZOOM_OUT;
-      if (pendingLon !== null) { targetLon = pendingLon; targetTilt = pendingTilt; pendingLon = pendingTilt = null; }
-      phase = 'zoom-in';
+  if (phase === 'pan') {
+    currentZoom += (ZOOM_IN - currentZoom) * 0.10;
+    currentLon  += normLon(targetLon  - currentLon)  * 0.12;
+    currentTilt += (targetTilt - currentTilt) * 0.12;
+    if (pendingLon !== null) { targetLon = pendingLon; targetTilt = pendingTilt; pendingLon = pendingTilt = null; }
+    if (Math.abs(normLon(targetLon - currentLon)) < 0.005 &&
+        Math.abs(targetTilt - currentTilt) < 0.005 &&
+        Math.abs(currentZoom - ZOOM_IN) < 0.005) {
+      currentZoom = ZOOM_IN; phase = 'idle';
     }
-    return;
-  }
-  if (phase === 'zoom-in') {
-    currentZoom += (ZOOM_IN - currentZoom) * 0.08;
-    currentLon  += normLon(targetLon  - currentLon)  * 0.10;
-    currentTilt += (targetTilt - currentTilt) * 0.10;
-    if (pendingLon !== null) { phase = 'zoom-out'; return; }
-    if (Math.abs(currentZoom - ZOOM_IN) < 0.015) { currentZoom = ZOOM_IN; phase = 'idle'; }
     return;
   }
   if (phase === 'idle') {

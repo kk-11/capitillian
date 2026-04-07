@@ -5,27 +5,23 @@ import { colors } from "../theme/colors";
 
 interface FaceHeaderProps {
   face: CardFace;
-  isPremium: boolean;
+  isPremium?: boolean;
   onPress: () => void;
 }
 
-export default function FaceHeader({ face, isPremium, onPress }: FaceHeaderProps) {
+export default function FaceHeader({ face, onPress }: FaceHeaderProps) {
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={onPress}
-      disabled={!isPremium}
-      activeOpacity={isPremium ? 0.6 : 1}
+      activeOpacity={0.6}
     >
       <Text style={styles.label}>{FACE_LABELS[face]}</Text>
-
-      {isPremium && (
-        <View style={styles.dots}>
-          {CARD_FACES.map((f) => (
-            <View key={f} style={[styles.dot, f === face && styles.dotActive]} />
-          ))}
-        </View>
-      )}
+      <View style={styles.dots}>
+        {CARD_FACES.map((f) => (
+          <View key={f} style={[styles.dot, f === face && styles.dotActive]} />
+        ))}
+      </View>
     </TouchableOpacity>
   );
 }

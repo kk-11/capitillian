@@ -16,8 +16,9 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePremium } from "../contexts/PremiumContext";
 import { useFaceSelector } from "../game/useFaceSelector";
-import { useGameEngine, ROUND_SECONDS } from "../game/useGameEngine";
-import { useDailyLimit } from "../hooks/useDailyLimit";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useGameEngine, ROUND_SECONDS, type PersistedGameState } from "../game/useGameEngine";
+import { useDailyLimit, DAILY_PLAY_LIMIT } from "../hooks/useDailyLimit";
 import { usePerfectStreak } from "../hooks/usePerfectStreak";
 import { useBadgeProgress } from "../hooks/useBadgeProgress";
 import FaceHeader from "../components/FaceHeader";
@@ -137,8 +138,8 @@ const BADGE_GROUPS: Array<{
 export default function GameScreen() {
   const { isPremium, purchase, restorePurchases } = usePremium();
   const { left, right, cycleLeft, cycleRight } = useFaceSelector(isPremium);
-  const { state, startGame, selectCard } = useGameEngine();
-  const { hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
+  const { state, startGame, restoreGame, selectCard } = useGameEngine();
+  const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
   const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
   const { counts: badgeCounts, increment: incrementBadge } = useBadgeProgress();
   const [gameMode, setGameMode] = useState<GameMode>("all");
@@ -166,9 +167,66 @@ export default function GameScreen() {
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
   const recordedRef = useRef(false);
 
+  const PREFS_KEY = "@cap/prefs";
+  const GAME_KEY  = "@cap/game";
+
+  // Load persisted prefs + game state on mount
   useEffect(() => {
-    startGame(REGIONS[gameMode], isPremium, false, isHardcore);
+    (async () => {
+      try {
+        const [prefsRaw, gameRaw] = await Promise.all([
+          AsyncStorage.getItem(PREFS_KEY),
+          AsyncStorage.getItem(GAME_KEY),
+        ]);
+        if (prefsRaw) {
+          const prefs = JSON.parse(prefsRaw) as { gameMode: GameMode; isHardcore: boolean };
+          setGameMode(prefs.gameMode);
+          setIsHardcore(prefs.isHardcore);
+          if (gameRaw) {
+            const saved = JSON.parse(gameRaw) as PersistedGameState;
+            restoreGame(saved);
+            return;
+          }
+          startGame(REGIONS[prefs.gameMode], isPremium, false, prefs.isHardcore);
+        } else {
+          startGame(REGIONS[gameMode], isPremium, false, isHardcore);
+        }
+      } catch {
+        startGame(REGIONS[gameMode], isPremium, false, isHardcore);
+      }
+    })();
   }, []);
+
+  // Persist prefs whenever they change
+  useEffect(() => {
+    AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ gameMode, isHardcore })).catch(() => {});
+  }, [gameMode, isHardcore]);
+
+  // Persist game state on every meaningful change
+  useEffect(() => {
+    const { status, leftCards, rightCards, pool, pendingMatched, wrongCountries,
+            pairsMatched, wrongGuesses, secondsLeft, targetPairs, hasTimer, countUp, isHardcore: hc } = state;
+    if (status === "playing" || status === "ready") {
+      const saved: PersistedGameState = {
+        leftCodes: leftCards.map(c => c.code),
+        rightCodes: rightCards.map(c => c.code),
+        poolCodes: pool.map(c => c.code),
+        pendingMatched,
+        wrongCodes: wrongCountries.map(c => c.code),
+        pairsMatched,
+        wrongGuesses,
+        secondsLeft,
+        targetPairs,
+        hasTimer,
+        countUp,
+        isHardcore: hc,
+      };
+      AsyncStorage.setItem(GAME_KEY, JSON.stringify(saved)).catch(() => {});
+    } else if (status === "won" || status === "timeout") {
+      AsyncStorage.removeItem(GAME_KEY).catch(() => {});
+    }
+  }, [state.status, state.leftCards, state.rightCards, state.pool, state.pairsMatched,
+      state.wrongGuesses, state.secondsLeft, state.pendingMatched]);
 
   // Reset focused country when a new game starts
   useEffect(() => {
@@ -245,8 +303,9 @@ export default function GameScreen() {
 
   // Freemium gate flags
   const showCountdown  = !isPremium && (hasPlayedToday || gameEndedAsFree);
-  const canPlayAgain   = isPremium;
+  const canPlayAgain   = isPremium || !hasPlayedToday;
   const canPractice    = wrongCountries.length > 1 && (isPremium || !hasPracticedToday);
+  const playsRemaining = Math.max(0, DAILY_PLAY_LIMIT - playsToday);
 
   const handleGlobeTap = (lat: number, lon: number) => {
     let nearest = COUNTRIES[0];
@@ -343,17 +402,15 @@ export default function GameScreen() {
                   <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
                 </View>
               </TouchableOpacity>
-              {isPremium ? (
-                <TouchableOpacity
-                  onPress={() => setShowModeDropdown(true)}
-                  activeOpacity={0.7}
-                  disabled={status === "playing"}
-                >
-                  <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
-                    {MODE_LABELS[gameMode]}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
+              <TouchableOpacity
+                onPress={() => setShowModeDropdown(true)}
+                activeOpacity={0.7}
+                disabled={status === "playing"}
+              >
+                <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
+                  {MODE_LABELS[gameMode]}
+                </Text>
+              </TouchableOpacity>
               <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
             </View>
           </View>
@@ -461,6 +518,11 @@ export default function GameScreen() {
                     <Text style={styles.startButtonText}>
                       {status === "won" ? "Play Again" : "Try Again"}
                     </Text>
+                    {!isPremium && (
+                      <Text style={styles.playsRemainingText}>
+                        {playsRemaining} {playsRemaining === 1 ? "play" : "plays"} left today
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 ) : (
                   <View style={styles.countdownBlock}>
@@ -1137,6 +1199,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: colors.background,
+  },
+  playsRemainingText: {
+    fontSize: 12,
+    color: colors.background,
+    opacity: 0.7,
+    marginTop: 3,
   },
   endTitle: {
     fontSize: 26,

@@ -15,12 +15,14 @@ type PremiumContextValue = {
 const PremiumContext = createContext<PremiumContextValue | undefined>(undefined);
 
 export function PremiumProvider({ children }: { children: React.ReactNode }) {
-  const [isPremium, setIsPremium] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
   const checkPremium = (info: CustomerInfo) => {
-    setIsPremium(true);
+    setIsPremium(info.entitlements.active[ENTITLEMENT_ID] !== undefined);
   };
+
+  console.log('isPremium',  isPremium)
 
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.DEBUG);
