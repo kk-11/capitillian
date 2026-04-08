@@ -6,9 +6,11 @@ type GlobeProps = {
   targetLat?: number;
   targetLng?: number;
   interactive?: boolean;
+  flatEarth?: boolean;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   onGlobeTap?: (lat: number, lon: number) => void;
+  onSecretTap?: () => void;
   highlightCode?: string | null;
 };
 
@@ -57,6 +59,110 @@ img.onload = () => {
   texPx = d.data; texW = 1024; texH = 512;
 };
 img.src = 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Whole_world_-_land_and_oceans_12000.jpg';
+
+// ---------------------------------------------------------------------------
+// Flat earth mode
+// ---------------------------------------------------------------------------
+var flatMode = false;
+var flatOffsetX = 0; // fraction of map width
+var flatOffsetY = 0;
+
+window.setFlatMode = function(on) {
+  flatMode = on;
+  flatOffsetX = 0;
+  flatOffsetY = 0;
+};
+
+function getMapRect() {
+  var mapH = ch * 0.85;
+  var mapW = mapH * 2;
+  var mapX0 = (cw - mapW) / 2 + flatOffsetX * mapW;
+  var mapY0 = (ch - mapH) / 2 + flatOffsetY * mapH;
+  return { x: mapX0, y: mapY0, w: mapW, h: mapH };
+}
+
+function projectFlat(lat, lng) {
+  var m = getMapRect();
+  var x = m.x + (lng + 180) / 360 * m.w;
+  var y = m.y + (90 - lat) / 180 * m.h;
+  return [x, y];
+}
+
+function drawFlatHighlight() {
+  if (!hlFeature) return;
+  hlAlpha = Math.min(1, hlAlpha + 0.05);
+  var geom = hlFeature.geometry;
+  if (!geom) return;
+  var polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+
+  ctx.save();
+  ctx.fillStyle = '#ffd050';
+  ctx.globalAlpha = hlAlpha * 0.35;
+  for (var pi = 0; pi < polys.length; pi++) {
+    var ring = polys[pi][0];
+    ctx.beginPath();
+    var started = false;
+    for (var vi = 0; vi < ring.length; vi++) {
+      var pt = projectFlat(ring[vi][1], ring[vi][0]);
+      if (!started) { ctx.moveTo(pt[0], pt[1]); started = true; }
+      else ctx.lineTo(pt[0], pt[1]);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#ffe580';
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = hlAlpha * 0.95;
+  for (var pi2 = 0; pi2 < polys.length; pi2++) {
+    var ring2 = polys[pi2][0];
+    ctx.beginPath();
+    var started2 = false;
+    for (var vi2 = 0; vi2 < ring2.length; vi2++) {
+      var pt2 = projectFlat(ring2[vi2][1], ring2[vi2][0]);
+      if (!started2) { ctx.moveTo(pt2[0], pt2[1]); started2 = true; }
+      else ctx.lineTo(pt2[0], pt2[1]);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFlat() {
+  ctx.fillStyle = '#001018';
+  ctx.fillRect(0, 0, cw, ch);
+
+  var m = getMapRect();
+  if (img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, m.x, m.y, m.w, m.h);
+    // wrap left/right
+    if (m.x > 0)        ctx.drawImage(img, m.x - m.w, m.y, m.w, m.h);
+    if (m.x + m.w < cw) ctx.drawImage(img, m.x + m.w, m.y, m.w, m.h);
+  }
+
+  // grid lines
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 0.5;
+  for (var lon = -180; lon <= 180; lon += 30) {
+    var x = m.x + (lon + 180) / 360 * m.w;
+    ctx.beginPath(); ctx.moveTo(x, m.y); ctx.lineTo(x, m.y + m.h); ctx.stroke();
+  }
+  for (var lat = -90; lat <= 90; lat += 30) {
+    var y = m.y + (90 - lat) / 180 * m.h;
+    ctx.beginPath(); ctx.moveTo(m.x, y); ctx.lineTo(m.x + m.w, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  drawFlatHighlight();
+
+  // stamp
+  ctx.save();
+  ctx.font = 'bold ' + Math.floor(cw * 0.045) + 'px monospace';
+  ctx.fillStyle = 'rgba(255,210,0,0.55)';
+  ctx.textAlign = 'center';
+  ctx.fillText('★  FLAT EARTH MODE  ★', cw / 2, Math.floor(ch * 0.08));
+  ctx.restore();
+}
 
 // ---------------------------------------------------------------------------
 // Country polygon data (world-atlas + topojson)
@@ -242,6 +348,7 @@ function updateAnim() {
 // Render
 // ---------------------------------------------------------------------------
 function draw() {
+  if (flatMode) { drawFlat(); return; }
   updateAnim();
 
   const imgData = ctx.createImageData(cw, ch);
@@ -310,6 +417,8 @@ let isDragging = false;
 let startTX = 0, startTY = 0, startTime = 0;
 let lastTX = 0, lastTY = 0;
 let pinchDist0 = 0;
+// Secret: 5 taps within 2 seconds
+let tapTimes = [];
 
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
@@ -332,10 +441,17 @@ canvas.addEventListener('touchmove', function(e) {
   if (e.touches.length === 1 && isDragging) {
     var dx = e.touches[0].clientX - lastTX;
     var dy = e.touches[0].clientY - lastTY;
-    currentLon  += dx * 0.010;
-    currentTilt -= dy * 0.010;
-    currentTilt = Math.max(-Math.PI/2, Math.min(Math.PI/2, currentTilt));
-    targetLon = currentLon; targetTilt = currentTilt;
+    if (flatMode) {
+      var m = getMapRect();
+      flatOffsetX += dx / m.w;
+      flatOffsetY += dy / m.h;
+      flatOffsetY = Math.max(-0.4, Math.min(0.4, flatOffsetY));
+    } else {
+      currentLon  += dx * 0.010;
+      currentTilt -= dy * 0.010;
+      currentTilt = Math.max(-Math.PI/2, Math.min(Math.PI/2, currentTilt));
+      targetLon = currentLon; targetTilt = currentTilt;
+    }
     lastTX = e.touches[0].clientX;
     lastTY = e.touches[0].clientY;
   } else if (e.touches.length === 2) {
@@ -358,6 +474,16 @@ canvas.addEventListener('touchend', function(e) {
     var dt = Date.now() - startTime;
     var dist = Math.sqrt(dx*dx + dy*dy);
     if (dist < 10 && dt < 300) {
+      // Secret tap counter
+      var now = Date.now();
+      tapTimes.push(now);
+      tapTimes = tapTimes.filter(function(t) { return now - t < 2000; });
+      if (tapTimes.length >= 5) {
+        tapTimes = [];
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: 'secret' })
+        );
+      }
       var tapPx = e.changedTouches[0].clientX * S;
       var tapPy = e.changedTouches[0].clientY * S;
       var tdx = tapPx - cx;
@@ -388,7 +514,7 @@ canvas.addEventListener('touchend', function(e) {
 </body>
 </html>`;
 
-export default function Globe({ targetLat, targetLng, interactive = false, onSwipeLeft, onSwipeRight, onGlobeTap, highlightCode }: GlobeProps) {
+export default function Globe({ targetLat, targetLng, interactive = false, flatEarth = false, onSwipeLeft, onSwipeRight, onGlobeTap, onSecretTap, highlightCode }: GlobeProps) {
   const webviewRef = useRef<WebView>(null);
 
   useEffect(() => {
@@ -402,12 +528,17 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
     webviewRef.current?.injectJavaScript(`setHighlight(${JSON.stringify(code)}); true;`);
   }, [highlightCode]);
 
+  useEffect(() => {
+    webviewRef.current?.injectJavaScript(`setFlatMode(${flatEarth}); true;`);
+  }, [flatEarth]);
+
   const handleMessage = (e: { nativeEvent: { data: string } }) => {
     try {
       const msg = JSON.parse(e.nativeEvent.data);
       if (msg.type === "tap") onGlobeTap?.(msg.lat, msg.lon);
       else if (msg.type === "swipeLeft") onSwipeLeft?.();
       else if (msg.type === "swipeRight") onSwipeRight?.();
+      else if (msg.type === "secret") onSecretTap?.();
     } catch {
       // non-JSON debug logs
     }

@@ -157,6 +157,7 @@ export default function GameScreen() {
   }, []);
   const [focusedCountry, setFocusedCountry] = useState<Country | null>(null);
   const [freePalestine, setFreePalestine] = useState(false);
+  const [flatEarth, setFlatEarth] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [listExpandedCode, setListExpandedCode] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -388,9 +389,11 @@ export default function GameScreen() {
         targetLat={focusedCountry?.lat}
         targetLng={focusedCountry?.lng}
         interactive={currentPage === 1}
+        flatEarth={flatEarth}
         onSwipeLeft={() => goToPage(2)}
         onSwipeRight={() => goToPage(0)}
         onGlobeTap={handleGlobeTap}
+        onSecretTap={() => setFlatEarth(f => !f)}
         highlightCode={highlightCode}
       />
       {isHardcore && currentPage === 0 && <HardcoreVignette />}
