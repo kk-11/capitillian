@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/kk-11/capitillian/compare/v1.1.0...v1.1.1) (2026-04-08)
+
+
+### Bug Fixes
+
+* icon ([d71ec97](https://github.com/kk-11/capitillian/commit/d71ec979dc0d20027e1ff8ecb217cb2e00960442))
+
 # [1.1.0](https://github.com/kk-11/capitillian/compare/v1.0.0...v1.1.0) (2026-04-08)
 
 
