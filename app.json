@@ -1,78 +1,117 @@
 {
-	"expo": {
-		"name": "Capitillian",
-		"slug": "capitillian",
-		"version": "1.0.0",
-		"orientation": "portrait",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "dark",
-		"newArchEnabled": true,
-		"splash": {
-			"image": "./assets/icon.png",
-			"resizeMode": "cover",
-			"backgroundColor": "#0a0a0a"
-		},
-		"ios": {
-			"supportsTablet": true,
-			"bundleIdentifier": "com.capitillian.app",
-			"buildNumber": "1",
-			"infoPlist": {
-				"ITSAppUsesNonExemptEncryption": false
-			}
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/icon.png",
-				"backgroundColor": "#0a0a0a"
-			},
-			"package": "com.capitillian.app",
-			"versionCode": 1,
-			"edgeToEdgeEnabled": true
-		},
-		"plugins": [
-			[
-				"expo-alternate-app-icons",
-				{
-					"icons": [
-						{
-							"name": "match-bronze",
-							"ios": { "image": "./assets/icons/match-bronze.png" },
-							"android": { "foregroundImage": "./assets/icons/match-bronze.png", "backgroundColor": "#CD7F32" }
-						},
-						{
-							"name": "match-silver",
-							"ios": { "image": "./assets/icons/match-silver.png" },
-							"android": { "foregroundImage": "./assets/icons/match-silver.png", "backgroundColor": "#C0C0C0" }
-						},
-						{
-							"name": "match-gold",
-							"ios": { "image": "./assets/icons/match-gold.png" },
-							"android": { "foregroundImage": "./assets/icons/match-gold.png", "backgroundColor": "#FFD700" }
-						},
-						{
-							"name": "mine-bronze",
-							"ios": { "image": "./assets/icons/mine-bronze.png" },
-							"android": { "foregroundImage": "./assets/icons/mine-bronze.png", "backgroundColor": "#CD7F32" }
-						},
-						{
-							"name": "mine-silver",
-							"ios": { "image": "./assets/icons/mine-silver.png" },
-							"android": { "foregroundImage": "./assets/icons/mine-silver.png", "backgroundColor": "#C0C0C0" }
-						},
-						{
-							"name": "mine-gold",
-							"ios": { "image": "./assets/icons/mine-gold.png" },
-							"android": { "foregroundImage": "./assets/icons/mine-gold.png", "backgroundColor": "#FFD700" }
-						}
-					]
-				}
-			]
-		],
-		"scheme": "capitillian",
-		"extra": {
-			"eas": {
-				"projectId": "YOUR_EAS_PROJECT_ID"
-			}
-		}
-	}
+  "expo": {
+    "name": "Capitillian",
+    "slug": "capitillian",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.capitillian.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "package": "com.capitillian.app",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      [
+        "expo-alternate-app-icons",
+        {
+          "icons": [
+            {
+              "name": "match-bronze",
+              "ios": {
+                "image": "./assets/icons/match-bronze.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/match-bronze.png",
+                "backgroundColor": "#CD7F32"
+              }
+            },
+            {
+              "name": "match-silver",
+              "ios": {
+                "image": "./assets/icons/match-silver.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/match-silver.png",
+                "backgroundColor": "#C0C0C0"
+              }
+            },
+            {
+              "name": "match-gold",
+              "ios": {
+                "image": "./assets/icons/match-gold.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/match-gold.png",
+                "backgroundColor": "#FFD700"
+              }
+            },
+            {
+              "name": "mine-bronze",
+              "ios": {
+                "image": "./assets/icons/mine-bronze.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/mine-bronze.png",
+                "backgroundColor": "#CD7F32"
+              }
+            },
+            {
+              "name": "mine-silver",
+              "ios": {
+                "image": "./assets/icons/mine-silver.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/mine-silver.png",
+                "backgroundColor": "#C0C0C0"
+              }
+            },
+            {
+              "name": "mine-gold",
+              "ios": {
+                "image": "./assets/icons/mine-gold.png"
+              },
+              "android": {
+                "foregroundImage": "./assets/icons/mine-gold.png",
+                "backgroundColor": "#FFD700"
+              }
+            }
+          ]
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "kk-11-xe"
+        }
+      ]
+    ],
+    "scheme": "capitillian",
+    "extra": {
+      "eas": {
+        "projectId": "d0e1cc86-17e0-4959-8457-7579c334bc1d"
+      }
+    },
+    "owner": "kk-11"
+  }
 }

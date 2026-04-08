@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
 } from "react-native";
+import * as Sentry from "@sentry/react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -183,15 +184,21 @@ export default function GameScreen() {
           setGameMode(prefs.gameMode);
           setIsHardcore(prefs.isHardcore);
           if (gameRaw) {
-            const saved = JSON.parse(gameRaw) as PersistedGameState;
-            restoreGame(saved);
-            return;
+            try {
+              const saved = JSON.parse(gameRaw) as PersistedGameState;
+              restoreGame(saved);
+              return;
+            } catch (e) {
+              Sentry.captureException(e, { extra: { context: "restoreGame", gameRaw } });
+              await AsyncStorage.removeItem(GAME_KEY);
+            }
           }
           startGame(REGIONS[prefs.gameMode], isPremium, false, prefs.isHardcore);
         } else {
           startGame(REGIONS[gameMode], isPremium, false, isHardcore);
         }
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e, { extra: { context: "loadPersistedState" } });
         startGame(REGIONS[gameMode], isPremium, false, isHardcore);
       }
     })();
@@ -282,7 +289,6 @@ export default function GameScreen() {
   // Direct card press handler — updates globe AND game engine simultaneously
   const handleCardPress = (side: "left" | "right", index: number) => {
     const country = side === "left" ? leftCards[index] : rightCards[index];
-    console.log("[Globe] card pressed:", side, index, country?.name, country?.lat, country?.lng);
     if (country) { setFocusedCountry(country); setHighlightCode(country.code); }
     selectCard(side, index);
   };

@@ -87,7 +87,7 @@ function shuffle<T>(arr: T[]): T[] {
 // Initial state
 // ---------------------------------------------------------------------------
 
-const INITIAL_STATE: GameEngineState = {
+export const INITIAL_STATE: GameEngineState = {
   roundId: 0,
   status: "idle",
   leftCards: [],
@@ -111,7 +111,7 @@ const INITIAL_STATE: GameEngineState = {
 // Reducer
 // ---------------------------------------------------------------------------
 
-function reducer(state: GameEngineState, action: Action): GameEngineState {
+export function reducer(state: GameEngineState, action: Action): GameEngineState {
   switch (action.type) {
     case "START": {
       const { shuffled, targetPairs, hasTimer, countUp, isHardcore } = action;

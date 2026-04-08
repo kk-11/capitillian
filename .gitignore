@@ -40,3 +40,5 @@ yarn-error.*
 
 # supabase temp files
 supabase/.temp/
+
+.env.local

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import Purchases, { type CustomerInfo, LOG_LEVEL } from "react-native-purchases";
+import * as Sentry from "@sentry/react-native";
 
 // ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
 const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
@@ -22,15 +23,13 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
     setIsPremium(info.entitlements.active[ENTITLEMENT_ID] !== undefined);
   };
 
-  console.log('isPremium',  isPremium)
-
   useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
     Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
     Purchases.getCustomerInfo()
       .then(checkPremium)
-      .catch(() => setIsPremium(false))
+      .catch((e) => { Sentry.captureException(e, { extra: { context: "getCustomerInfo" } }); setIsPremium(false); })
       .finally(() => setInitializing(false));
 
     Purchases.addCustomerInfoUpdateListener(checkPremium);
@@ -38,18 +37,28 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const purchase = async () => {
-    const offerings = await Purchases.getOfferings();
-    const pkg = offerings.current?.availablePackages[0];
-    if (!pkg) throw new Error("No packages available");
-    const { customerInfo } = await Purchases.purchasePackage(pkg);
-    checkPremium(customerInfo);
+    try {
+      const offerings = await Purchases.getOfferings();
+      const pkg = offerings.current?.availablePackages[0];
+      if (!pkg) throw new Error("No packages available");
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      checkPremium(customerInfo);
+    } catch (e: any) {
+      if (!e?.userCancelled) Sentry.captureException(e, { extra: { context: "purchase" } });
+      throw e;
+    }
   };
 
   const restorePurchases = async (): Promise<boolean> => {
-    const info = await Purchases.restorePurchases();
-    const hasPremium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-    checkPremium(info);
-    return hasPremium;
+    try {
+      const info = await Purchases.restorePurchases();
+      const hasPremium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+      checkPremium(info);
+      return hasPremium;
+    } catch (e) {
+      Sentry.captureException(e, { extra: { context: "restorePurchases" } });
+      throw e;
+    }
   };
 
   const value = useMemo<PremiumContextValue>(
