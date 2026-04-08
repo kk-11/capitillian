@@ -515,6 +515,23 @@ export default function GameScreen() {
                   <Text style={styles.endTitle}>Game Over!</Text>
                 )}
 
+                {/* Streak banner */}
+                {status === "won" && wrongGuesses === 0 && perfectStreak > 0 && (
+                  <View style={styles.streakBanner}>
+                    <Text style={styles.streakFire}>🔥</Text>
+                    <Text style={styles.streakCount}>{perfectStreak}</Text>
+                    <Text style={styles.streakLabel}>
+                      {perfectStreak === 1 ? "day perfect" : "day streak"}
+                    </Text>
+                  </View>
+                )}
+                {status === "won" && wrongGuesses > 0 && perfectStreak === 0 && (
+                  <View style={[styles.streakBanner, styles.streakBannerBroken]}>
+                    <Text style={styles.streakFire}>💀</Text>
+                    <Text style={styles.streakLabel}>streak broken</Text>
+                  </View>
+                )}
+
                 <View style={styles.statsBlock}>
                   <View style={styles.statRow}>
                     <Text style={styles.statLabel}>Pairs matched</Text>
@@ -530,12 +547,6 @@ export default function GameScreen() {
                       <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
                     </View>
                   )}
-                  <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Perfect streak</Text>
-                    <Text style={styles.statValue}>
-                      {perfectStreak} {perfectStreak === 1 ? "day" : "days"}
-                    </Text>
-                  </View>
                 </View>
 
                 {canPlayAgain ? (
@@ -1240,6 +1251,36 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.textPrimary,
     textAlign: "center",
+  },
+  streakBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#1A1A00",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  streakBannerBroken: {
+    backgroundColor: "#1A0000",
+  },
+  streakFire: {
+    fontSize: 28,
+  },
+  streakCount: {
+    fontSize: 36,
+    fontWeight: "900",
+    color: "#FFD60A",
+    lineHeight: 40,
+  },
+  streakLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#AAA",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   statsBlock: {
     width: "100%",
