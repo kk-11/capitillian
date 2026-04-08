@@ -1,3 +1,19 @@
+# [1.2.0](https://github.com/kk-11/capitillian/compare/v1.1.1...v1.2.0) (2026-04-08)
+
+
+### Bug Fixes
+
+* web game score shows X/197, CTA interrupts every 5 correct matches ([217dc08](https://github.com/kk-11/capitillian/commit/217dc0854cb7e2010da67279f61590ee861d1da2))
+
+
+### Features
+
+* add landing page with embedded geography quiz game ([e63cb4f](https://github.com/kk-11/capitillian/commit/e63cb4f20bc1a04b19d2183cdd752f1b48526344))
+* add sound effects for card interactions ([1091258](https://github.com/kk-11/capitillian/commit/10912584da2ff8577045c89b6ca4290985e19370))
+* highlight daily streak on end screen and landing page ([4e23ff3](https://github.com/kk-11/capitillian/commit/4e23ff3484f883085e60fa3159a5655b93696ef3))
+* replace play-again with app download CTA on web game completion ([6736443](https://github.com/kk-11/capitillian/commit/673644379be894bfbfd0cfcb2b7798c46ca03311))
+* web game uses all 197 countries with app CTA between rounds ([40ed9ea](https://github.com/kk-11/capitillian/commit/40ed9ea1d072268230fb81d3d6cb8f62e2e4da8b))
+
 ## [1.1.1](https://github.com/kk-11/capitillian/compare/v1.1.0...v1.1.1) (2026-04-08)
 
 
