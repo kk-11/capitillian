@@ -29,6 +29,7 @@ import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
 import { getFaceValue, formatPopulation, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
+import * as Haptics from "expo-haptics";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -290,8 +291,24 @@ export default function GameScreen() {
   const handleCardPress = (side: "left" | "right", index: number) => {
     const country = side === "left" ? leftCards[index] : rightCards[index];
     if (country) { setFocusedCountry(country); setHighlightCode(country.code); }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     selectCard(side, index);
   };
+
+  // Wrong guess — heavy, then a second heavy hit after a short delay
+  useEffect(() => {
+    if (wrongFlash) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [wrongFlash]);
+
+  // Correct match — two quick light-heavy taps
+  useEffect(() => {
+    if (matchFlash) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 80);
+    }
+  }, [matchFlash]);
 
   useEffect(() => {
     Animated.timing(stopButtonOpacity, {
