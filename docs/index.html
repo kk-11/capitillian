@@ -197,14 +197,14 @@
       <!-- Message -->
       <div id="message" style="font-family:'Courier New',monospace;color:#fff;font-size:13px;text-align:center;margin-top:20px;min-height:20px;"></div>
 
-      <!-- End card -->
+      <!-- Between-round CTA -->
       <div id="end-card" style="display:none;text-align:center;padding:8px 0 4px;">
-        <div style="font-size:32px;margin-bottom:10px;">🔥</div>
-        <div style="font-family:'Courier New',monospace;color:#FFD60A;font-size:18px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;">Not bad.</div>
-        <div style="font-family:'Courier New',monospace;color:#888;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;">The app has 197 countries, streaks &amp; hardcore mode.</div>
+        <div id="end-emoji" style="font-size:32px;margin-bottom:10px;">🔥</div>
+        <div id="end-headline" style="font-family:'Courier New',monospace;color:#FFD60A;font-size:17px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;"></div>
+        <div id="end-sub" style="font-family:'Courier New',monospace;color:#888;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;line-height:1.6;"></div>
         <a href="https://apps.apple.com/app/capitillian/id6744087174" style="display:inline-block;background:#FFD60A;color:#000;font-family:'Courier New',monospace;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:12px 24px;border-radius:8px;">Download Free on iOS</a>
         <div style="margin-top:16px;">
-          <span onclick="restart()" style="font-family:'Courier New',monospace;color:#555;font-size:11px;cursor:pointer;text-decoration:underline;letter-spacing:1px;text-transform:uppercase;">play again</span>
+          <span id="continue-btn" onclick="nextRound()" style="font-family:'Courier New',monospace;color:#555;font-size:11px;cursor:pointer;text-decoration:underline;letter-spacing:1px;text-transform:uppercase;"></span>
         </div>
       </div>
 
@@ -214,41 +214,66 @@
 
 <script>
 (function() {
-  const ALL = [
-    ["France","Paris"],["Germany","Berlin"],["Japan","Tokyo"],
-    ["Brazil","Brasília"],["Australia","Canberra"],["Egypt","Cairo"],
-    ["Mexico","Mexico City"],["India","New Delhi"],["Canada","Ottawa"],
-    ["Argentina","Buenos Aires"],["Nigeria","Abuja"],["South Korea","Seoul"],
-    ["Spain","Madrid"],["Italy","Rome"],["Portugal","Lisbon"],
-    ["Ireland","Dublin"],["Norway","Oslo"],["Sweden","Stockholm"],
-    ["Poland","Warsaw"],["Greece","Athens"],
-  ];
+  const ALL = [["Algeria","Algiers"],["Angola","Luanda"],["Benin","Porto-Novo"],["Botswana","Gaborone"],["Burkina Faso","Ouagadougou"],["Burundi","Gitega"],["Cape Verde","Praia"],["Cameroon","Yaoundé"],["Central African Republic","Bangui"],["Chad","N'Djamena"],["Comoros","Moroni"],["DR Congo","Kinshasa"],["Republic of the Congo","Brazzaville"],["Ivory Coast","Yamoussoukro"],["Djibouti","Djibouti"],["Egypt","Cairo"],["Equatorial Guinea","Malabo"],["Eritrea","Asmara"],["Eswatini","Mbabane"],["Ethiopia","Addis Ababa"],["Gabon","Libreville"],["Gambia","Banjul"],["Ghana","Accra"],["Guinea","Conakry"],["Guinea-Bissau","Bissau"],["Kenya","Nairobi"],["Lesotho","Maseru"],["Liberia","Monrovia"],["Libya","Tripoli"],["Madagascar","Antananarivo"],["Malawi","Lilongwe"],["Mali","Bamako"],["Mauritania","Nouakchott"],["Mauritius","Port Louis"],["Morocco","Rabat"],["Mozambique","Maputo"],["Namibia","Windhoek"],["Niger","Niamey"],["Nigeria","Abuja"],["Rwanda","Kigali"],["São Tomé and Príncipe","São Tomé"],["Senegal","Dakar"],["Seychelles","Victoria"],["Sierra Leone","Freetown"],["Somalia","Mogadishu"],["South Africa","Pretoria"],["South Sudan","Juba"],["Sudan","Khartoum"],["Tanzania","Dodoma"],["Togo","Lomé"],["Tunisia","Tunis"],["Uganda","Kampala"],["Zambia","Lusaka"],["Zimbabwe","Harare"],["Afghanistan","Kabul"],["Armenia","Yerevan"],["Azerbaijan","Baku"],["Bahrain","Manama"],["Bangladesh","Dhaka"],["Bhutan","Thimphu"],["Brunei","Bandar Seri Begawan"],["Cambodia","Phnom Penh"],["China","Beijing"],["Cyprus","Nicosia"],["Georgia","Tbilisi"],["India","New Delhi"],["Indonesia","Jakarta"],["Iran","Tehran"],["Iraq","Baghdad"],["Israel","Jerusalem"],["Japan","Tokyo"],["Jordan","Amman"],["Kazakhstan","Astana"],["Kuwait","Kuwait City"],["Kyrgyzstan","Bishkek"],["Laos","Vientiane"],["Lebanon","Beirut"],["Malaysia","Kuala Lumpur"],["Maldives","Malé"],["Mongolia","Ulaanbaatar"],["Myanmar","Naypyidaw"],["Nepal","Kathmandu"],["North Korea","Pyongyang"],["Oman","Muscat"],["Pakistan","Islamabad"],["Philippines","Manila"],["Qatar","Doha"],["Saudi Arabia","Riyadh"],["Singapore","Singapore"],["South Korea","Seoul"],["Sri Lanka","Sri Jayawardenepura Kotte"],["Syria","Damascus"],["Taiwan","Taipei"],["Tajikistan","Dushanbe"],["Thailand","Bangkok"],["Timor-Leste","Dili"],["Turkey","Ankara"],["Turkmenistan","Ashgabat"],["United Arab Emirates","Abu Dhabi"],["Uzbekistan","Tashkent"],["Vietnam","Hanoi"],["Yemen","Sana'a"],["Palestine","Ramallah"],["Albania","Tirana"],["Andorra","Andorra la Vella"],["Austria","Vienna"],["Belarus","Minsk"],["Belgium","Brussels"],["Bosnia and Herzegovina","Sarajevo"],["Bulgaria","Sofia"],["Croatia","Zagreb"],["Czech Republic","Prague"],["Denmark","Copenhagen"],["Estonia","Tallinn"],["Finland","Helsinki"],["France","Paris"],["Germany","Berlin"],["Greece","Athens"],["Hungary","Budapest"],["Iceland","Reykjavik"],["Ireland","Dublin"],["Italy","Rome"],["Kosovo","Pristina"],["Latvia","Riga"],["Liechtenstein","Vaduz"],["Lithuania","Vilnius"],["Luxembourg","Luxembourg City"],["Malta","Valletta"],["Moldova","Chișinău"],["Monaco","Monaco"],["Montenegro","Podgorica"],["Netherlands","Amsterdam"],["North Macedonia","Skopje"],["Norway","Oslo"],["Poland","Warsaw"],["Portugal","Lisbon"],["Romania","Bucharest"],["Russia","Moscow"],["San Marino","San Marino"],["Serbia","Belgrade"],["Slovakia","Bratislava"],["Slovenia","Ljubljana"],["Spain","Madrid"],["Sweden","Stockholm"],["Switzerland","Bern"],["Ukraine","Kyiv"],["United Kingdom","London"],["Vatican City","Vatican City"],["Antigua and Barbuda","Saint John's"],["Bahamas","Nassau"],["Barbados","Bridgetown"],["Belize","Belmopan"],["Canada","Ottawa"],["Costa Rica","San José"],["Cuba","Havana"],["Dominica","Roseau"],["Dominican Republic","Santo Domingo"],["El Salvador","San Salvador"],["Grenada","Saint George's"],["Guatemala","Guatemala City"],["Haiti","Port-au-Prince"],["Honduras","Tegucigalpa"],["Jamaica","Kingston"],["Mexico","Mexico City"],["Nicaragua","Managua"],["Panama","Panama City"],["Saint Kitts and Nevis","Basseterre"],["Saint Lucia","Castries"],["Saint Vincent and the Grenadines","Kingstown"],["Trinidad and Tobago","Port of Spain"],["United States","Washington, D.C."],["Argentina","Buenos Aires"],["Bolivia","Sucre"],["Brazil","Brasília"],["Chile","Santiago"],["Colombia","Bogotá"],["Ecuador","Quito"],["Guyana","Georgetown"],["Paraguay","Asunción"],["Peru","Lima"],["Suriname","Paramaribo"],["Uruguay","Montevideo"],["Venezuela","Caracas"],["Australia","Canberra"],["Fiji","Suva"],["Kiribati","South Tarawa"],["Marshall Islands","Majuro"],["Micronesia","Palikir"],["Nauru","Yaren"],["New Zealand","Wellington"],["Palau","Ngerulmud"],["Papua New Guinea","Port Moresby"],["Samoa","Apia"],["Solomon Islands","Honiara"],["Tonga","Nukuʻalofa"],["Tuvalu","Funafuti"],["Vanuatu","Port Vila"]];
 
-  let pairs, leftSel, rightSel, matched, wrong, seconds, timerInterval;
+  const ROUND_SIZE = 5;
+  const SELL_EVERY = 1; // show CTA after every round
+
+  let deck, roundNum, pairs, leftSel, rightSel, matched, wrong, seconds, timerInterval, rightOrder;
+
+  const PITCHES = [
+    { emoji: "🔥", headline: "Keep going.", sub: "The app tracks your streak across all 197 countries." },
+    { emoji: "🌍", headline: "You're on a roll.", sub: "The full app has Africa, Asia, Europe, the Americas and more — sorted by region." },
+    { emoji: "🏆", headline: "Not bad at all.", sub: "Earn badges in the app. Legendary tier: 100 flawless games in a row." },
+    { emoji: "💀", headline: "Hardcore mode.", sub: "One wrong answer ends the game. Available in the app." },
+    { emoji: "🌐", headline: "Interactive globe.", sub: "Every country you match lights up on a spinning globe in the app." },
+  ];
 
   function shuffle(a) {
     const b = [...a];
-    for (let i = b.length-1; i>0; i--) {
-      const j = Math.floor(Math.random()*(i+1));
-      [b[i],b[j]]=[b[j],b[i]];
-    }
+    for (let i = b.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
     return b;
   }
 
-  function init() {
-    pairs = shuffle(ALL).slice(0, 5);
+  function startSession() {
+    deck = shuffle([...ALL]);
+    roundNum = 0;
+    startRound();
+  }
+
+  function startRound() {
+    const slice = deck.splice(0, ROUND_SIZE);
+    if (slice.length === 0) { deck = shuffle([...ALL]); startRound(); return; }
+    pairs = slice.map(p => ({ country: p[0], capital: p[1] }));
     leftSel = null; rightSel = null; matched = 0; wrong = 0; seconds = 0;
+    rightOrder = shuffle(pairs.map((_,i)=>i));
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       seconds++;
       const m = Math.floor(seconds/60), s = seconds%60;
       document.getElementById('timer').textContent = m+':'+(s<10?'0':'')+s;
     }, 1000);
+    const done = (197 - deck.length - slice.length + 197) % 197;
     document.getElementById('score').textContent = '0 / '+pairs.length;
     document.getElementById('message').textContent = '';
     document.getElementById('board').style.display = 'flex';
     document.getElementById('end-card').style.display = 'none';
     render();
+  }
+
+  function showCTA() {
+    clearInterval(timerInterval);
+    document.getElementById('board').style.display = 'none';
+    document.getElementById('message').textContent = '';
+    const pitch = PITCHES[roundNum % PITCHES.length];
+    document.getElementById('end-emoji').textContent = pitch.emoji;
+    document.getElementById('end-headline').textContent = pitch.headline;
+    document.getElementById('end-sub').textContent = pitch.sub;
+    const remaining = deck.length;
+    document.getElementById('continue-btn').textContent =
+      remaining > 0 ? 'continue — '+remaining+' countries left' : 'play again';
+    document.getElementById('end-card').style.display = 'block';
+    roundNum++;
   }
 
   function cardStyle(selected, settled, flash) {
@@ -261,7 +286,6 @@
   }
 
   function render(leftFlash, rightFlash) {
-    const rights = shuffle(pairs.map(p=>p[1]));
     const lc = document.getElementById('left-col');
     const rc = document.getElementById('right-col');
     lc.innerHTML = ''; rc.innerHTML = '';
@@ -270,27 +294,21 @@
       const settled = pair._matched;
       const lSel = leftSel === i;
       const lFlash = leftFlash === i ? 'wrong' : (pair._matchFlash ? 'match' : null);
-
       const ld = document.createElement('div');
       ld.style.cssText = cardStyle(lSel, settled, lFlash);
-      ld.textContent = pair[0];
+      ld.textContent = pair.country;
       if (!settled) ld.onclick = () => selectLeft(i);
       lc.appendChild(ld);
     });
 
-    // Build right col from current rightOrder
-    if (!window._rightOrder || leftFlash !== undefined) {
-      if (!window._rightOrder) window._rightOrder = shuffle(pairs.map((_,i)=>i));
-    }
-    window._rightOrder.forEach((pi) => {
+    rightOrder.forEach((pi) => {
       const pair = pairs[pi];
       const settled = pair._matched;
       const rSel = rightSel === pi;
       const rFlash = rightFlash === pi ? 'wrong' : (pair._matchFlash ? 'match' : null);
-
       const rd = document.createElement('div');
       rd.style.cssText = cardStyle(rSel, settled, rFlash);
-      rd.textContent = pair[1];
+      rd.textContent = pair.capital;
       if (!settled) rd.onclick = () => selectRight(pi);
       rc.appendChild(rd);
     });
@@ -299,23 +317,19 @@
   function selectLeft(i) {
     if (pairs[i]._matched) return;
     leftSel = i;
-    if (rightSel !== null) attempt();
-    else render();
+    if (rightSel !== null) attempt(); else render();
   }
 
   function selectRight(i) {
     if (pairs[i]._matched) return;
     rightSel = i;
-    if (leftSel !== null) attempt();
-    else render();
+    if (leftSel !== null) attempt(); else render();
   }
 
   function attempt() {
     const li = leftSel, ri = rightSel;
     leftSel = null; rightSel = null;
-
     if (li === ri) {
-      // correct
       pairs[li]._matchFlash = true;
       render();
       setTimeout(() => {
@@ -324,16 +338,10 @@
         matched++;
         document.getElementById('score').textContent = matched+' / '+pairs.length;
         document.getElementById('message').textContent = '';
-        if (matched === pairs.length) {
-          clearInterval(timerInterval);
-          document.getElementById('board').style.display = 'none';
-          document.getElementById('message').innerHTML = '';
-          document.getElementById('end-card').style.display = 'block';
-        }
-        render();
+        if (matched === pairs.length) showCTA();
+        else render();
       }, 400);
     } else {
-      // wrong
       wrong++;
       document.getElementById('message').textContent = '✕ Wrong — '+wrong+' mistake'+(wrong>1?'s':'');
       render(li, ri);
@@ -341,13 +349,8 @@
     }
   }
 
-  window.restart = function() {
-    document.getElementById('end-card').style.display = 'none';
-    document.getElementById('board').style.display = 'flex';
-    init();
-  };
-  window._rightOrder = null;
-  init();
+  window.nextRound = startRound;
+  startSession();
 })();
 </script>
 
