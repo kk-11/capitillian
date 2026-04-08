@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Capitillian — Geography Quiz App | Learn World Capitals, Flags & Maps</title>
+<meta name="description" content="Capitillian is a geography quiz app for iOS. Match world capitals, flags, and populations on an interactive globe. Learn countries, maps, and geography through memory and play.">
+<meta name="keywords" content="geography quiz, world capitals quiz, geography app, learn geography, capitals game, world map quiz, country capitals, flags quiz, geography learning, memory game, map game, geo quiz, world geography, countries quiz, educational app, geography trivia">
+<meta name="author" content="Capitillian">
+<link rel="canonical" href="https://kk-11.github.io/capitillian">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kk-11.github.io/capitillian">
+<meta property="og:title" content="Capitillian — Learn World Capitals, Flags & Geography">
+<meta property="og:description" content="Match countries to capitals, flags, and populations on a spinning interactive globe. The geography quiz app that actually teaches you something.">
+<meta property="og:image" content="https://kk-11.github.io/capitillian/icon-brushstrokes.png">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Capitillian — Geography Quiz App">
+<meta name="twitter:description" content="Match countries to capitals, flags, and populations. Interactive globe. Hardcore mode. Learn geography through play.">
+<meta name="twitter:image" content="https://kk-11.github.io/capitillian/icon-brushstrokes.png">
+
+<!-- Schema.org structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  "name": "Capitillian",
+  "operatingSystem": "iOS",
+  "applicationCategory": "EducationApplication",
+  "description": "A geography quiz app that teaches world capitals, flags, populations, and maps through an interactive globe and memory-based card matching game.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "keywords": "geography, world capitals, flags, maps, learning, memory, quiz, countries, globe"
+}
+</script>
+
+<title>Capitillian — Geography Quiz App | Learn World Capitals, Flags & Maps</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #F6F1E9;
+    color: #1A1A1A;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  header {
+    border-bottom: 14px solid #1A1A1A;
+    padding: 48px 40px 40px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  header img {
+    width: 96px;
+    height: 96px;
+    display: block;
+  }
+
+  header h1 {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  header p {
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .stripe {
+    height: 14px;
+    background: repeating-linear-gradient(
+      90deg,
+      #C8102E 0px, #C8102E 80px,
+      #003082 80px, #003082 160px,
+      #F9B200 160px, #F9B200 240px,
+      #1A6B2A 240px, #1A6B2A 320px
+    );
+  }
+
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 64px 40px;
+  }
+
+  .screenshots {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 64px;
+    overflow-x: auto;
+  }
+
+  .screenshots img {
+    height: 200px;
+    border: 6px solid #1A1A1A;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  section {
+    border-top: 6px solid #1A1A1A;
+    padding-top: 40px;
+    margin-bottom: 48px;
+  }
+
+  section h2 {
+    font-size: 32px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    margin-bottom: 24px;
+  }
+
+  section p, section li {
+    margin-bottom: 16px;
+    max-width: 640px;
+  }
+
+  section ul {
+    padding-left: 24px;
+  }
+
+  a {
+    color: #C8102E;
+    text-decoration: underline;
+  }
+
+  .tag {
+    display: inline-block;
+    background: #1A1A1A;
+    color: #F6F1E9;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    margin-bottom: 16px;
+  }
+
+  footer {
+    border-top: 14px solid #1A1A1A;
+    padding: 32px 40px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="icon-brushstrokes.png" alt="Capitillian logo">
+  <div>
+    <h1>Capitillian</h1>
+    <p>Geography. Capitals. Flags. Populations.</p>
+  </div>
+</header>
+
+<div class="stripe"></div>
+
+<section id="demo-section" style="background:#0a0a0a;padding:64px 40px;text-align:center;">
+  <p style="font-family:'Courier New',monospace;color:#888;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;">Try it in your browser</p>
+
+  <div id="phone" style="display:inline-block;background:#111;border-radius:44px;padding:16px;border:3px solid #333;box-shadow:0 40px 80px rgba(0,0,0,0.6);max-width:340px;width:100%;">
+    <div style="background:#0a0a0a;border-radius:32px;overflow:hidden;padding:24px 16px 32px;">
+
+      <!-- Top bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:0 4px;">
+        <div id="timer" style="font-family:'Courier New',monospace;color:#fff;font-size:22px;font-weight:700;">0:00</div>
+        <div style="font-family:'Courier New',monospace;color:#666;font-size:14px;" id="score">0 / 10</div>
+      </div>
+
+      <!-- Cards -->
+      <div style="display:flex;gap:10px;" id="board">
+        <div id="left-col" style="flex:1;display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="right-col" style="flex:1;display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <!-- Message -->
+      <div id="message" style="font-family:'Courier New',monospace;color:#fff;font-size:13px;text-align:center;margin-top:20px;min-height:20px;"></div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  const ALL = [
+    ["France","Paris"],["Germany","Berlin"],["Japan","Tokyo"],
+    ["Brazil","Brasília"],["Australia","Canberra"],["Egypt","Cairo"],
+    ["Mexico","Mexico City"],["India","New Delhi"],["Canada","Ottawa"],
+    ["Argentina","Buenos Aires"],["Nigeria","Abuja"],["South Korea","Seoul"],
+    ["Spain","Madrid"],["Italy","Rome"],["Portugal","Lisbon"],
+    ["Ireland","Dublin"],["Norway","Oslo"],["Sweden","Stockholm"],
+    ["Poland","Warsaw"],["Greece","Athens"],
+  ];
+
+  let pairs, leftSel, rightSel, matched, wrong, seconds, timerInterval;
+
+  function shuffle(a) {
+    const b = [...a];
+    for (let i = b.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [b[i],b[j]]=[b[j],b[i]];
+    }
+    return b;
+  }
+
+  function init() {
+    pairs = shuffle(ALL).slice(0, 5);
+    leftSel = null; rightSel = null; matched = 0; wrong = 0; seconds = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = Math.floor(seconds/60), s = seconds%60;
+      document.getElementById('timer').textContent = m+':'+(s<10?'0':'')+s;
+    }, 1000);
+    document.getElementById('score').textContent = '0 / '+pairs.length;
+    document.getElementById('message').textContent = '';
+    render();
+  }
+
+  function cardStyle(selected, settled, flash) {
+    let bg = '#1c1c1e', border = '2px solid #2c2c2e', color = '#fff';
+    if (settled) { bg='#1c1c1e'; color='#333'; border='2px solid #1c1c1e'; }
+    else if (flash==='wrong') { bg='#3d1010'; border='2px solid #C8102E'; }
+    else if (flash==='match') { bg='#0d2e1a'; border='2px solid #2ecc71'; }
+    else if (selected) { bg='#003082'; border='2px solid #4a90e2'; }
+    return `background:${bg};border:${border};color:${color};border-radius:12px;padding:14px 10px;font-family:'Courier New',monospace;font-size:13px;text-align:center;cursor:${settled?'default':'pointer'};transition:background 0.15s,border 0.15s;min-height:48px;display:flex;align-items:center;justify-content:center;`;
+  }
+
+  function render(leftFlash, rightFlash) {
+    const rights = shuffle(pairs.map(p=>p[1]));
+    const lc = document.getElementById('left-col');
+    const rc = document.getElementById('right-col');
+    lc.innerHTML = ''; rc.innerHTML = '';
+
+    pairs.forEach((pair, i) => {
+      const settled = pair._matched;
+      const lSel = leftSel === i;
+      const lFlash = leftFlash === i ? 'wrong' : (pair._matchFlash ? 'match' : null);
+
+      const ld = document.createElement('div');
+      ld.style.cssText = cardStyle(lSel, settled, lFlash);
+      ld.textContent = pair[0];
+      if (!settled) ld.onclick = () => selectLeft(i);
+      lc.appendChild(ld);
+    });
+
+    // Build right col from current rightOrder
+    if (!window._rightOrder || leftFlash !== undefined) {
+      if (!window._rightOrder) window._rightOrder = shuffle(pairs.map((_,i)=>i));
+    }
+    window._rightOrder.forEach((pi) => {
+      const pair = pairs[pi];
+      const settled = pair._matched;
+      const rSel = rightSel === pi;
+      const rFlash = rightFlash === pi ? 'wrong' : (pair._matchFlash ? 'match' : null);
+
+      const rd = document.createElement('div');
+      rd.style.cssText = cardStyle(rSel, settled, rFlash);
+      rd.textContent = pair[1];
+      if (!settled) rd.onclick = () => selectRight(pi);
+      rc.appendChild(rd);
+    });
+  }
+
+  function selectLeft(i) {
+    if (pairs[i]._matched) return;
+    leftSel = i;
+    if (rightSel !== null) attempt();
+    else render();
+  }
+
+  function selectRight(i) {
+    if (pairs[i]._matched) return;
+    rightSel = i;
+    if (leftSel !== null) attempt();
+    else render();
+  }
+
+  function attempt() {
+    const li = leftSel, ri = rightSel;
+    leftSel = null; rightSel = null;
+
+    if (li === ri) {
+      // correct
+      pairs[li]._matchFlash = true;
+      render();
+      setTimeout(() => {
+        pairs[li]._matched = true;
+        pairs[li]._matchFlash = false;
+        matched++;
+        document.getElementById('score').textContent = matched+' / '+pairs.length;
+        document.getElementById('message').textContent = '';
+        if (matched === pairs.length) {
+          clearInterval(timerInterval);
+          document.getElementById('message').innerHTML = '🎉 Round complete! <span onclick="restart()" style="cursor:pointer;text-decoration:underline;">Play again</span>';
+        }
+        render();
+      }, 400);
+    } else {
+      // wrong
+      wrong++;
+      document.getElementById('message').textContent = '✕ Wrong — '+wrong+' mistake'+(wrong>1?'s':'');
+      render(li, ri);
+      setTimeout(() => render(), 600);
+    }
+  }
+
+  window.restart = init;
+  window._rightOrder = null;
+  init();
+})();
+</script>
+
+<main>
+
+  <section>
+    <span class="tag">Geography Quiz App for iOS</span>
+    <h2>Learn Every Country in the World</h2>
+    <p>Capitillian is a <strong>geography quiz app</strong> for iPhone that teaches you <strong>world capitals</strong>, country <strong>flags</strong>, populations, and map locations through a fast-paced card matching game played on an interactive spinning globe.</p>
+    <p>Whether you're studying for a geography exam, training your memory, or just embarrassed that you can't find Hungary on a map — Capitillian makes <strong>learning geography</strong> genuinely fun.</p>
+    <ul>
+      <li>Match <strong>countries to their capitals</strong> — all 197 countries</li>
+      <li>Learn <strong>world flags</strong> and national populations</li>
+      <li>Explore regions: Africa, Asia, Europe, the Americas, Oceania, Caribbean</li>
+      <li>Interactive <strong>globe map</strong> that zooms to every country you select</li>
+      <li>Hardcore mode — one wrong answer ends the game</li>
+      <li>Earn badges for perfect rounds. Legendary tier: 100 flawless games</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Privacy Policy</span>
+    <h2>What We Collect</h2>
+    <p>Almost nothing.</p>
+    <ul>
+      <li><strong>Game progress</strong> — stored locally on your device only. We never see it.</li>
+      <li><strong>Crash reports</strong> — sent to Sentry if the app crashes. Includes device type, OS version, and a stack trace. No personal information.</li>
+      <li><strong>Purchase receipts</strong> — processed by RevenueCat and Apple. We receive only whether your entitlement is active. We never see your payment details.</li>
+    </ul>
+    <p>We do not use analytics. We do not track sessions. We do not sell data. There are no accounts.</p>
+  </section>
+
+  <section>
+    <span class="tag">Privacy Policy</span>
+    <h2>Third Parties</h2>
+    <ul>
+      <li><strong>Sentry</strong> — crash reporting. <a href="https://sentry.io/privacy/" target="_blank">sentry.io/privacy</a></li>
+      <li><strong>RevenueCat</strong> — in-app purchase management. <a href="https://www.revenuecat.com/privacy" target="_blank">revenuecat.com/privacy</a></li>
+      <li><strong>Apple</strong> — payment processing. <a href="https://www.apple.com/legal/privacy/" target="_blank">apple.com/legal/privacy</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Terms of Use</span>
+    <h2>Using the App</h2>
+    <ul>
+      <li>Capitillian is provided as-is. We make no guarantees about uptime, accuracy of geographic data, or your score.</li>
+      <li>The premium upgrade is a one-time purchase. It is non-refundable except where required by law.</li>
+      <li>You may not reverse engineer, copy, or redistribute the app or its assets.</li>
+      <li>We reserve the right to update these terms. Continued use of the app constitutes acceptance.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Support</span>
+    <h2>Get In Touch</h2>
+    <p>Something broken? Something wrong? A country in the wrong place?</p>
+    <p><a href="https://github.com/kk-11/capitillian/issues">github.com/kk-11/capitillian/issues</a></p>
+  </section>
+
+</main>
+
+<div class="stripe"></div>
+
+<footer>
+  &copy; 2026 Capitillian &mdash; Last updated April 2026
+</footer>
+
+</body>
+</html>
