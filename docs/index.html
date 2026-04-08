@@ -216,10 +216,10 @@
 (function() {
   const ALL = [["Algeria","Algiers"],["Angola","Luanda"],["Benin","Porto-Novo"],["Botswana","Gaborone"],["Burkina Faso","Ouagadougou"],["Burundi","Gitega"],["Cape Verde","Praia"],["Cameroon","Yaoundé"],["Central African Republic","Bangui"],["Chad","N'Djamena"],["Comoros","Moroni"],["DR Congo","Kinshasa"],["Republic of the Congo","Brazzaville"],["Ivory Coast","Yamoussoukro"],["Djibouti","Djibouti"],["Egypt","Cairo"],["Equatorial Guinea","Malabo"],["Eritrea","Asmara"],["Eswatini","Mbabane"],["Ethiopia","Addis Ababa"],["Gabon","Libreville"],["Gambia","Banjul"],["Ghana","Accra"],["Guinea","Conakry"],["Guinea-Bissau","Bissau"],["Kenya","Nairobi"],["Lesotho","Maseru"],["Liberia","Monrovia"],["Libya","Tripoli"],["Madagascar","Antananarivo"],["Malawi","Lilongwe"],["Mali","Bamako"],["Mauritania","Nouakchott"],["Mauritius","Port Louis"],["Morocco","Rabat"],["Mozambique","Maputo"],["Namibia","Windhoek"],["Niger","Niamey"],["Nigeria","Abuja"],["Rwanda","Kigali"],["São Tomé and Príncipe","São Tomé"],["Senegal","Dakar"],["Seychelles","Victoria"],["Sierra Leone","Freetown"],["Somalia","Mogadishu"],["South Africa","Pretoria"],["South Sudan","Juba"],["Sudan","Khartoum"],["Tanzania","Dodoma"],["Togo","Lomé"],["Tunisia","Tunis"],["Uganda","Kampala"],["Zambia","Lusaka"],["Zimbabwe","Harare"],["Afghanistan","Kabul"],["Armenia","Yerevan"],["Azerbaijan","Baku"],["Bahrain","Manama"],["Bangladesh","Dhaka"],["Bhutan","Thimphu"],["Brunei","Bandar Seri Begawan"],["Cambodia","Phnom Penh"],["China","Beijing"],["Cyprus","Nicosia"],["Georgia","Tbilisi"],["India","New Delhi"],["Indonesia","Jakarta"],["Iran","Tehran"],["Iraq","Baghdad"],["Israel","Jerusalem"],["Japan","Tokyo"],["Jordan","Amman"],["Kazakhstan","Astana"],["Kuwait","Kuwait City"],["Kyrgyzstan","Bishkek"],["Laos","Vientiane"],["Lebanon","Beirut"],["Malaysia","Kuala Lumpur"],["Maldives","Malé"],["Mongolia","Ulaanbaatar"],["Myanmar","Naypyidaw"],["Nepal","Kathmandu"],["North Korea","Pyongyang"],["Oman","Muscat"],["Pakistan","Islamabad"],["Philippines","Manila"],["Qatar","Doha"],["Saudi Arabia","Riyadh"],["Singapore","Singapore"],["South Korea","Seoul"],["Sri Lanka","Sri Jayawardenepura Kotte"],["Syria","Damascus"],["Taiwan","Taipei"],["Tajikistan","Dushanbe"],["Thailand","Bangkok"],["Timor-Leste","Dili"],["Turkey","Ankara"],["Turkmenistan","Ashgabat"],["United Arab Emirates","Abu Dhabi"],["Uzbekistan","Tashkent"],["Vietnam","Hanoi"],["Yemen","Sana'a"],["Palestine","Ramallah"],["Albania","Tirana"],["Andorra","Andorra la Vella"],["Austria","Vienna"],["Belarus","Minsk"],["Belgium","Brussels"],["Bosnia and Herzegovina","Sarajevo"],["Bulgaria","Sofia"],["Croatia","Zagreb"],["Czech Republic","Prague"],["Denmark","Copenhagen"],["Estonia","Tallinn"],["Finland","Helsinki"],["France","Paris"],["Germany","Berlin"],["Greece","Athens"],["Hungary","Budapest"],["Iceland","Reykjavik"],["Ireland","Dublin"],["Italy","Rome"],["Kosovo","Pristina"],["Latvia","Riga"],["Liechtenstein","Vaduz"],["Lithuania","Vilnius"],["Luxembourg","Luxembourg City"],["Malta","Valletta"],["Moldova","Chișinău"],["Monaco","Monaco"],["Montenegro","Podgorica"],["Netherlands","Amsterdam"],["North Macedonia","Skopje"],["Norway","Oslo"],["Poland","Warsaw"],["Portugal","Lisbon"],["Romania","Bucharest"],["Russia","Moscow"],["San Marino","San Marino"],["Serbia","Belgrade"],["Slovakia","Bratislava"],["Slovenia","Ljubljana"],["Spain","Madrid"],["Sweden","Stockholm"],["Switzerland","Bern"],["Ukraine","Kyiv"],["United Kingdom","London"],["Vatican City","Vatican City"],["Antigua and Barbuda","Saint John's"],["Bahamas","Nassau"],["Barbados","Bridgetown"],["Belize","Belmopan"],["Canada","Ottawa"],["Costa Rica","San José"],["Cuba","Havana"],["Dominica","Roseau"],["Dominican Republic","Santo Domingo"],["El Salvador","San Salvador"],["Grenada","Saint George's"],["Guatemala","Guatemala City"],["Haiti","Port-au-Prince"],["Honduras","Tegucigalpa"],["Jamaica","Kingston"],["Mexico","Mexico City"],["Nicaragua","Managua"],["Panama","Panama City"],["Saint Kitts and Nevis","Basseterre"],["Saint Lucia","Castries"],["Saint Vincent and the Grenadines","Kingstown"],["Trinidad and Tobago","Port of Spain"],["United States","Washington, D.C."],["Argentina","Buenos Aires"],["Bolivia","Sucre"],["Brazil","Brasília"],["Chile","Santiago"],["Colombia","Bogotá"],["Ecuador","Quito"],["Guyana","Georgetown"],["Paraguay","Asunción"],["Peru","Lima"],["Suriname","Paramaribo"],["Uruguay","Montevideo"],["Venezuela","Caracas"],["Australia","Canberra"],["Fiji","Suva"],["Kiribati","South Tarawa"],["Marshall Islands","Majuro"],["Micronesia","Palikir"],["Nauru","Yaren"],["New Zealand","Wellington"],["Palau","Ngerulmud"],["Papua New Guinea","Port Moresby"],["Samoa","Apia"],["Solomon Islands","Honiara"],["Tonga","Nukuʻalofa"],["Tuvalu","Funafuti"],["Vanuatu","Port Vila"]];
 
-  const ROUND_SIZE = 5;
-  const SELL_EVERY = 1; // show CTA after every round
+  const BOARD_SIZE = 5;   // cards visible at once
+  const CTA_EVERY  = 5;   // interrupt every N correct matches
 
-  let deck, roundNum, pairs, leftSel, rightSel, matched, wrong, seconds, timerInterval, rightOrder;
+  let deck, totalMatched, pitchNum, pairs, leftSel, rightSel, wrong, seconds, timerInterval, rightOrder;
 
   const PITCHES = [
     { emoji: "🔥", headline: "Keep going.", sub: "The app tracks your streak across all 197 countries." },
@@ -237,43 +237,45 @@
 
   function startSession() {
     deck = shuffle([...ALL]);
-    roundNum = 0;
-    startRound();
-  }
-
-  function startRound() {
-    const slice = deck.splice(0, ROUND_SIZE);
-    if (slice.length === 0) { deck = shuffle([...ALL]); startRound(); return; }
-    pairs = slice.map(p => ({ country: p[0], capital: p[1] }));
-    leftSel = null; rightSel = null; matched = 0; wrong = 0; seconds = 0;
-    rightOrder = shuffle(pairs.map((_,i)=>i));
+    totalMatched = 0; pitchNum = 0; wrong = 0; seconds = 0;
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       seconds++;
       const m = Math.floor(seconds/60), s = seconds%60;
       document.getElementById('timer').textContent = m+':'+(s<10?'0':'')+s;
     }, 1000);
-    const done = (197 - deck.length - slice.length + 197) % 197;
-    document.getElementById('score').textContent = '0 / '+pairs.length;
+    loadBoard();
+  }
+
+  function loadBoard() {
+    if (deck.length < BOARD_SIZE) deck = [...deck, ...shuffle([...ALL])];
+    const slice = deck.splice(0, BOARD_SIZE);
+    pairs = slice.map(p => ({ country: p[0], capital: p[1] }));
+    leftSel = null; rightSel = null;
+    rightOrder = shuffle(pairs.map((_,i)=>i));
+    updateScore();
     document.getElementById('message').textContent = '';
     document.getElementById('board').style.display = 'flex';
     document.getElementById('end-card').style.display = 'none';
     render();
   }
 
+  function updateScore() {
+    document.getElementById('score').textContent = totalMatched + ' / 197';
+  }
+
   function showCTA() {
-    clearInterval(timerInterval);
     document.getElementById('board').style.display = 'none';
     document.getElementById('message').textContent = '';
-    const pitch = PITCHES[roundNum % PITCHES.length];
+    const pitch = PITCHES[pitchNum % PITCHES.length];
     document.getElementById('end-emoji').textContent = pitch.emoji;
     document.getElementById('end-headline').textContent = pitch.headline;
     document.getElementById('end-sub').textContent = pitch.sub;
-    const remaining = deck.length;
+    const remaining = 197 - totalMatched;
     document.getElementById('continue-btn').textContent =
-      remaining > 0 ? 'continue — '+remaining+' countries left' : 'play again';
+      remaining > 0 ? 'continue — ' + remaining + ' countries left' : 'play again';
     document.getElementById('end-card').style.display = 'block';
-    roundNum++;
+    pitchNum++;
   }
 
   function cardStyle(selected, settled, flash) {
@@ -335,11 +337,18 @@
       setTimeout(() => {
         pairs[li]._matched = true;
         pairs[li]._matchFlash = false;
-        matched++;
-        document.getElementById('score').textContent = matched+' / '+pairs.length;
+        totalMatched++;
+        updateScore();
         document.getElementById('message').textContent = '';
-        if (matched === pairs.length) showCTA();
-        else render();
+        const boardDone = pairs.every(p => p._matched);
+        if (totalMatched % CTA_EVERY === 0) {
+          // interrupt with CTA; if board also finished it'll reload after continue
+          showCTA();
+        } else if (boardDone) {
+          loadBoard();
+        } else {
+          render();
+        }
       }, 400);
     } else {
       wrong++;
@@ -349,7 +358,10 @@
     }
   }
 
-  window.nextRound = startRound;
+  window.nextRound = function() {
+    if (totalMatched >= 197) { startSession(); return; }
+    loadBoard();
+  };
   startSession();
 })();
 </script>
