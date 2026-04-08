@@ -197,6 +197,17 @@
       <!-- Message -->
       <div id="message" style="font-family:'Courier New',monospace;color:#fff;font-size:13px;text-align:center;margin-top:20px;min-height:20px;"></div>
 
+      <!-- End card -->
+      <div id="end-card" style="display:none;text-align:center;padding:8px 0 4px;">
+        <div style="font-size:32px;margin-bottom:10px;">🔥</div>
+        <div style="font-family:'Courier New',monospace;color:#FFD60A;font-size:18px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;">Not bad.</div>
+        <div style="font-family:'Courier New',monospace;color:#888;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;">The app has 197 countries, streaks &amp; hardcore mode.</div>
+        <a href="https://apps.apple.com/app/capitillian/id6744087174" style="display:inline-block;background:#FFD60A;color:#000;font-family:'Courier New',monospace;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:12px 24px;border-radius:8px;">Download Free on iOS</a>
+        <div style="margin-top:16px;">
+          <span onclick="restart()" style="font-family:'Courier New',monospace;color:#555;font-size:11px;cursor:pointer;text-decoration:underline;letter-spacing:1px;text-transform:uppercase;">play again</span>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -235,6 +246,8 @@
     }, 1000);
     document.getElementById('score').textContent = '0 / '+pairs.length;
     document.getElementById('message').textContent = '';
+    document.getElementById('board').style.display = 'flex';
+    document.getElementById('end-card').style.display = 'none';
     render();
   }
 
@@ -313,7 +326,9 @@
         document.getElementById('message').textContent = '';
         if (matched === pairs.length) {
           clearInterval(timerInterval);
-          document.getElementById('message').innerHTML = '🎉 Round complete! <span onclick="restart()" style="cursor:pointer;text-decoration:underline;">Play again</span>';
+          document.getElementById('board').style.display = 'none';
+          document.getElementById('message').innerHTML = '';
+          document.getElementById('end-card').style.display = 'block';
         }
         render();
       }, 400);
@@ -326,7 +341,11 @@
     }
   }
 
-  window.restart = init;
+  window.restart = function() {
+    document.getElementById('end-card').style.display = 'none';
+    document.getElementById('board').style.display = 'flex';
+    init();
+  };
   window._rightOrder = null;
   init();
 })();
