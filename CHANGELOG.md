@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/kk-11/capitillian/compare/v1.0.0...v1.1.0) (2026-04-08)
+
+
+### Features
+
+* add haptic feedback for card select, match, and ([5c03877](https://github.com/kk-11/capitillian/commit/5c0387726faafc12cdd3af9421514ab3e71b3a9f))
+
 # 1.0.0 (2026-04-08)
 
 
