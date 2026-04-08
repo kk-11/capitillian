@@ -30,6 +30,7 @@ import PremiumDialog from "../components/PremiumDialog";
 import { getFaceValue, formatPopulation, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
 import * as Haptics from "expo-haptics";
+import { useSounds } from "../hooks/useSounds";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -139,6 +140,7 @@ const BADGE_GROUPS: Array<{
 
 export default function GameScreen() {
   const { isPremium, purchase, restorePurchases } = usePremium();
+  const { play } = useSounds();
   const { left, right, cycleLeft, cycleRight } = useFaceSelector(isPremium);
   const { state, startGame, restoreGame, selectCard } = useGameEngine();
   const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
@@ -232,6 +234,7 @@ export default function GameScreen() {
       AsyncStorage.setItem(GAME_KEY, JSON.stringify(saved)).catch(() => {});
     } else if (status === "won" || status === "timeout") {
       AsyncStorage.removeItem(GAME_KEY).catch(() => {});
+      if (status === "won") play("complete");
     }
   }, [state.status, state.leftCards, state.rightCards, state.pool, state.pairsMatched,
       state.wrongGuesses, state.secondsLeft, state.pendingMatched]);
@@ -292,6 +295,7 @@ export default function GameScreen() {
     const country = side === "left" ? leftCards[index] : rightCards[index];
     if (country) { setFocusedCountry(country); setHighlightCode(country.code); }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    play("select");
     selectCard(side, index);
   };
 
@@ -299,6 +303,7 @@ export default function GameScreen() {
   useEffect(() => {
     if (wrongFlash) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      play("wrong");
     }
   }, [wrongFlash]);
 
@@ -307,6 +312,7 @@ export default function GameScreen() {
     if (matchFlash) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 80);
+      play("match");
     }
   }, [matchFlash]);
 
