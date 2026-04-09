@@ -46,6 +46,7 @@
 	},
 	"devDependencies": {
 		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/exec": "^7.1.0",
 		"@semantic-release/git": "^10.0.1",
 		"@testing-library/react-native": "^13.3.3",
 		"@types/react": "~19.1.0",

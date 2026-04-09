@@ -1,0 +1,13 @@
+name: Preview Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: preview

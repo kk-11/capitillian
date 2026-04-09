@@ -1,0 +1,13 @@
+name: Production Build
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: production

@@ -23,8 +23,11 @@
     ["@semantic-release/npm", {
       "npmPublish": false
     }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "node -e \"const fs=require('fs');const a=JSON.parse(fs.readFileSync('app.json'));a.expo.version='${nextRelease.version}';fs.writeFileSync('app.json',JSON.stringify(a,null,2)+'\\n');\""
+    }],
     ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md", "package.json"],
+      "assets": ["CHANGELOG.md", "package.json", "app.json"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     "@semantic-release/github"
