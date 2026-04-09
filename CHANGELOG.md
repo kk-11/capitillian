@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/kk-11/capitillian/compare/v1.2.4...v1.2.5) (2026-04-09)
+
+
+### Bug Fixes
+
+* install expo-asset peer ([ab8f2f6](https://github.com/kk-11/capitillian/commit/ab8f2f6e90c368f12a0a03ec356d1e87e2e6fa1a))
+
 ## [1.2.4](https://github.com/kk-11/capitillian/compare/v1.2.3...v1.2.4) (2026-04-09)
 
 
