@@ -104,7 +104,8 @@
           "project": "react-native",
           "organization": "kk-11-xe"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "scheme": "capitillian",
     "extra": {
