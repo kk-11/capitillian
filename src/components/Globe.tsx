@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Animated } from "react-native";
 import WebView from "react-native-webview";
 
 type GlobeProps = {
@@ -390,6 +390,15 @@ canvas.addEventListener('touchend', function(e) {
 
 export default function Globe({ targetLat, targetLng, interactive = false, onSwipeLeft, onSwipeRight, onGlobeTap, highlightCode }: GlobeProps) {
   const webviewRef = useRef<WebView>(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const handleLoadEnd = () => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  };
 
   useEffect(() => {
     if (targetLat !== undefined && targetLng !== undefined) {
@@ -415,19 +424,22 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
 
   return (
     <View style={styles.container} pointerEvents={interactive ? "auto" : "none"}>
-      <WebView
-        ref={webviewRef}
-        style={styles.webview}
-        source={{ html: HTML }}
-        scrollEnabled={false}
-        bounces={false}
-        overScrollMode="never"
-        showsHorizontalScrollIndicator={false}
-        showsVerticalScrollIndicator={false}
-        originWhitelist={["*"]}
-        javaScriptEnabled
-        onMessage={handleMessage}
-      />
+      <Animated.View style={[styles.container, { opacity }]}>
+        <WebView
+          ref={webviewRef}
+          style={styles.webview}
+          source={{ html: HTML }}
+          scrollEnabled={false}
+          bounces={false}
+          overScrollMode="never"
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          originWhitelist={["*"]}
+          javaScriptEnabled
+          onMessage={handleMessage}
+          onLoadEnd={handleLoadEnd}
+        />
+      </Animated.View>
     </View>
   );
 }

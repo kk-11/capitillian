@@ -18,8 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePremium } from "../contexts/PremiumContext";
 import { useFaceSelector } from "../game/useFaceSelector";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useGameEngine, ROUND_SECONDS, type PersistedGameState } from "../game/useGameEngine";
-import { useDailyLimit, DAILY_PLAY_LIMIT } from "../hooks/useDailyLimit";
+import { useGameEngine, ROUND_SECONDS, BOARD_SIZE, type PersistedGameState } from "../game/useGameEngine";
+import { useDailyLimit, DAILY_PLAY_LIMIT, KEY_PLAYED, parsePlayed } from "../hooks/useDailyLimit";
 import { usePerfectStreak } from "../hooks/usePerfectStreak";
 import { useBadgeProgress } from "../hooks/useBadgeProgress";
 import FaceHeader from "../components/FaceHeader";
@@ -35,6 +35,10 @@ import { useSounds } from "../hooks/useSounds";
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function CardSkeleton() {
+  return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(18,18,22,0.4)", borderWidth: 1, borderColor: "rgba(255,255,255,0.04)", marginBottom: 6 }} />;
+}
 
 function formatTime(totalSeconds: number): string {
   const mins = Math.floor(totalSeconds / 60);
@@ -178,10 +182,14 @@ export default function GameScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const [prefsRaw, gameRaw] = await Promise.all([
+        const [prefsRaw, gameRaw, playedRaw] = await Promise.all([
           AsyncStorage.getItem(PREFS_KEY),
           AsyncStorage.getItem(GAME_KEY),
+          AsyncStorage.getItem(KEY_PLAYED),
         ]);
+
+        const limitReached = !isPremium && parsePlayed(playedRaw) >= DAILY_PLAY_LIMIT;
+
         if (prefsRaw) {
           const prefs = JSON.parse(prefsRaw) as { gameMode: GameMode; isHardcore: boolean };
           setGameMode(prefs.gameMode);
@@ -196,9 +204,9 @@ export default function GameScreen() {
               await AsyncStorage.removeItem(GAME_KEY);
             }
           }
-          startGame(REGIONS[prefs.gameMode], isPremium, false, prefs.isHardcore);
+          if (!limitReached) startGame(REGIONS[prefs.gameMode], isPremium, false, prefs.isHardcore);
         } else {
-          startGame(REGIONS[gameMode], isPremium, false, isHardcore);
+          if (!limitReached) startGame(REGIONS[gameMode], isPremium, false, isHardcore);
         }
       } catch (e) {
         Sentry.captureException(e, { extra: { context: "loadPersistedState" } });
@@ -476,7 +484,11 @@ export default function GameScreen() {
                       isSettled={pendingMatched.includes(card.code)}
                       onPress={() => handleCardPress("left", i)}
                       disabled={isDisabled || pendingMatched.includes(card.code)}
+                      index={i}
                     />
+                  ))}
+                  {Array.from({ length: Math.max(0, BOARD_SIZE - leftCards.length) }).map((_, i) => (
+                    <CardSkeleton key={`left-skel-${i}`} />
                   ))}
                 </View>
 
@@ -495,14 +507,18 @@ export default function GameScreen() {
                       isSettled={pendingMatched.includes(card.code)}
                       onPress={() => handleCardPress("right", i)}
                       disabled={isDisabled || pendingMatched.includes(card.code)}
+                      index={i}
                     />
+                  ))}
+                  {Array.from({ length: Math.max(0, BOARD_SIZE - rightCards.length) }).map((_, i) => (
+                    <CardSkeleton key={`right-skel-${i}`} />
                   ))}
                 </View>
               </View>
             </ScrollView>
           </View>
 
-          {(status === "won" || status === "timeout") && (
+          {(status === "won" || status === "timeout" || (status === "idle" && hasPlayedToday && !isPremium)) && (
             <View style={styles.overlay}>
               <ScrollView
                 style={styles.endScroll}
@@ -511,8 +527,10 @@ export default function GameScreen() {
               >
                 {status === "won" ? (
                   <Text style={styles.endTitle}>Round Complete! 🎉</Text>
-                ) : (
+                ) : status === "timeout" ? (
                   <Text style={styles.endTitle}>Game Over!</Text>
+                ) : (
+                  <Text style={styles.endTitle}>Come back tomorrow!</Text>
                 )}
 
                 {/* Streak banner */}
@@ -532,22 +550,24 @@ export default function GameScreen() {
                   </View>
                 )}
 
-                <View style={styles.statsBlock}>
-                  <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Pairs matched</Text>
-                    <Text style={styles.statValue}>{pairsMatched} / {targetPairs}</Text>
-                  </View>
-                  <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>Wrong guesses</Text>
-                    <Text style={styles.statValue}>{wrongGuesses}</Text>
-                  </View>
-                  {hasTimer && (
+                {status !== "idle" && (
+                  <View style={styles.statsBlock}>
                     <View style={styles.statRow}>
-                      <Text style={styles.statLabel}>Time taken</Text>
-                      <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
+                      <Text style={styles.statLabel}>Pairs matched</Text>
+                      <Text style={styles.statValue}>{pairsMatched} / {targetPairs}</Text>
                     </View>
-                  )}
-                </View>
+                    <View style={styles.statRow}>
+                      <Text style={styles.statLabel}>Wrong guesses</Text>
+                      <Text style={styles.statValue}>{wrongGuesses}</Text>
+                    </View>
+                    {hasTimer && (
+                      <View style={styles.statRow}>
+                        <Text style={styles.statLabel}>Time taken</Text>
+                        <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
 
                 {canPlayAgain ? (
                   <TouchableOpacity
@@ -898,7 +918,7 @@ const styles = StyleSheet.create({
   // Page dots
   dotsContainer: {
     position: "absolute",
-    bottom: 50,
+    bottom: 80,
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -1105,7 +1125,7 @@ const styles = StyleSheet.create({
   },
   brandingTouchable: {
     position: "absolute",
-    bottom: 18,
+    bottom: 48,
     left: 0,
     right: 0,
     alignItems: "center",

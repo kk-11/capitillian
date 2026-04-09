@@ -293,7 +293,7 @@ export type GameMode =
   | "caribbean";
 
 export const MODE_LABELS: Record<GameMode, string> = {
-  all:             "All",
+  all:             "World",
   africa:          "Africa",
   europe:          "Europe",
   asia:            "Asia",

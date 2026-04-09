@@ -17,6 +17,7 @@ interface GameCardProps {
   isSettled: boolean;
   onPress: () => void;
   disabled?: boolean;
+  index?: number;
 }
 
 export default function GameCard({
@@ -28,15 +29,17 @@ export default function GameCard({
   isSettled,
   onPress,
   disabled = false,
+  index = 0,
 }: GameCardProps) {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Fade in on mount
+  // Waterfall fade in on mount
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 250,
+      duration: 220,
+      delay: index * 55,
       useNativeDriver: true,
     }).start();
   }, []);

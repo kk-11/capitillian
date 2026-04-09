@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const KEY_PLAYED   = "daily_last_played";
+export const KEY_PLAYED   = "daily_last_played";
 const KEY_PRACTICE = "daily_practice_used";
 export const DAILY_PLAY_LIMIT = 3;
 
@@ -18,7 +18,7 @@ function secsUntilLocalMidnight(): number {
 }
 
 // Stored as "YYYY-MM-DD:N" — count of plays on that date.
-function parsePlayed(raw: string | null): number {
+export function parsePlayed(raw: string | null): number {
   if (!raw) return 0;
   const [date, countStr] = raw.split(":");
   if (date !== localDateStr()) return 0;

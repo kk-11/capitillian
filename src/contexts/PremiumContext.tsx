@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import Purchases, { type CustomerInfo, LOG_LEVEL } from "react-native-purchases";
 import * as Sentry from "@sentry/react-native";
+import Constants from "expo-constants";
 
 // ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
 const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
@@ -25,7 +26,9 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
-    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    if (!__DEV__ || Constants.appOwnership !== 'expo') {
+      Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    }
 
     Purchases.getCustomerInfo()
       .then(checkPremium)

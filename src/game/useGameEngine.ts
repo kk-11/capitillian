@@ -367,7 +367,7 @@ export function useGameEngine() {
       setTimeout(() => {
         dispatch({ type: "MATCH", code: leftCountry.code });
         blockedRef.current = false;
-      }, 350);
+      }, 100);
     } else {
       blockedRef.current = true;
       dispatch({ type: "WRONG", leftIndex, rightIndex });
