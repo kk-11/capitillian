@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/kk-11/capitillian/compare/v1.2.1...v1.2.2) (2026-04-09)
+
+
+### Bug Fixes
+
+* enforce daily limit on app reopen and show countdown ([d090dd7](https://github.com/kk-11/capitillian/commit/d090dd7515deb023b992b13e6747efdb1d5c5726))
+
 ## [1.2.1](https://github.com/kk-11/capitillian/compare/v1.2.0...v1.2.1) (2026-04-09)
 
 
