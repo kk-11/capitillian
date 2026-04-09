@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/kk-11/capitillian/compare/v1.2.2...v1.2.3) (2026-04-09)
+
+
+### Bug Fixes
+
+* eas versions ([ea9d934](https://github.com/kk-11/capitillian/commit/ea9d9346e5b92c359ab08a92f0490411a7e27aff))
+
 ## [1.2.2](https://github.com/kk-11/capitillian/compare/v1.2.1...v1.2.2) (2026-04-09)
 
 
