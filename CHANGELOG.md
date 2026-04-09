@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/kk-11/capitillian/compare/v1.2.3...v1.2.4) (2026-04-09)
+
+
+### Bug Fixes
+
+* add sentry.properties for EAS build dSYM ([add2b3b](https://github.com/kk-11/capitillian/commit/add2b3b072716287e3dbb29625f04751d682aacb))
+
 ## [1.2.3](https://github.com/kk-11/capitillian/compare/v1.2.2...v1.2.3) (2026-04-09)
 
 
