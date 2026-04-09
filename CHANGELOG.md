@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/kk-11/capitillian/compare/v1.2.0...v1.2.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* remove redundadep ([8dadaec](https://github.com/kk-11/capitillian/commit/8dadaecd2ff8abef0a97c3447fa055c76f216c60))
+
 # [1.2.0](https://github.com/kk-11/capitillian/compare/v1.1.1...v1.2.0) (2026-04-08)
 
 
