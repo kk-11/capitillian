@@ -22,6 +22,7 @@ import { useGameEngine, ROUND_SECONDS, BOARD_SIZE, type PersistedGameState } fro
 import { useDailyLimit, DAILY_PLAY_LIMIT, KEY_PLAYED, parsePlayed } from "../hooks/useDailyLimit";
 import { usePerfectStreak } from "../hooks/usePerfectStreak";
 import { useBadgeProgress } from "../hooks/useBadgeProgress";
+import { useAppIcon } from "../hooks/useAppIcon";
 import FaceHeader from "../components/FaceHeader";
 import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
@@ -167,6 +168,7 @@ export default function GameScreen() {
   const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
   const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
   const { easyCounts, hcCounts, incrementEasy, incrementHc } = useBadgeProgress();
+  const { newlyUnlocked, applyIcon, dismissNewlyUnlocked, unlockedIcons, activeIcon } = useAppIcon(easyCounts, hcCounts);
   const [gameMode, setGameMode] = useState<GameMode>("all");
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [isHardcore, setIsHardcore] = useState(false);
@@ -878,9 +880,54 @@ export default function GameScreen() {
                 );
               })}
             </ScrollView>
+
+            {/* ── Icon picker ─────────────────────────────── */}
+            {unlockedIcons.size > 0 && (
+              <View style={styles.iconPickerSection}>
+                <Text style={styles.iconPickerLabel}>APP ICON</Text>
+                <View style={styles.iconPickerRow}>
+                  {/* Default icon */}
+                  <TouchableOpacity
+                    style={[styles.iconPickerItem, activeIcon === null && styles.iconPickerItemActive]}
+                    onPress={() => applyIcon(null)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.iconPickerEmoji}>🌐</Text>
+                    <Text style={styles.iconPickerName}>Default</Text>
+                  </TouchableOpacity>
+                  {(["match-bronze","match-silver","match-gold","mine-bronze","mine-silver","mine-gold"] as const).map(name => {
+                    const unlocked = unlockedIcons.has(name);
+                    const isActive = activeIcon === name;
+                    const emoji = name.startsWith("mine") ? "💣" : "🌍";
+                    const label = name.replace("match-","").replace("mine-","HC ");
+                    return (
+                      <TouchableOpacity
+                        key={name}
+                        style={[styles.iconPickerItem, isActive && styles.iconPickerItemActive, !unlocked && styles.iconPickerItemLocked]}
+                        onPress={() => unlocked && applyIcon(name)}
+                        activeOpacity={unlocked ? 0.7 : 1}
+                        disabled={!unlocked}
+                      >
+                        <Text style={[styles.iconPickerEmoji, !unlocked && styles.iconPickerEmojiLocked]}>{unlocked ? emoji : "🔒"}</Text>
+                        <Text style={[styles.iconPickerName, !unlocked && styles.iconPickerNameLocked]}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
           </SafeAreaView>
         </View>
       </Animated.View>
+
+      {/* ── Newly-unlocked icon banner ─────────────────── */}
+      {newlyUnlocked && (
+        <TouchableOpacity style={styles.iconUnlockBanner} onPress={dismissNewlyUnlocked} activeOpacity={0.9}>
+          <Text style={styles.iconUnlockBannerText}>🎉 New app icon unlocked: {newlyUnlocked.replace("-", " ")}!</Text>
+          <Text style={styles.iconUnlockBannerSub}>Tap to dismiss</Text>
+        </TouchableOpacity>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* Page dots                                                           */}
@@ -1691,5 +1738,90 @@ const styles = StyleSheet.create({
     opacity: 1,
     color: "#ffd700",
     fontWeight: "800",
+  },
+  iconPickerSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    marginTop: 8,
+  },
+  iconPickerLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 2,
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  iconPickerRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  iconPickerItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    minWidth: 64,
+  },
+  iconPickerItemActive: {
+    borderColor: "#00C0E8",
+    backgroundColor: "rgba(0,192,232,0.08)",
+  },
+  iconPickerItemLocked: {
+    opacity: 0.35,
+  },
+  iconPickerEmoji: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  iconPickerEmojiLocked: {
+    opacity: 0.5,
+  },
+  iconPickerName: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+  },
+  iconPickerNameLocked: {
+    opacity: 0.5,
+  },
+  iconUnlockBanner: {
+    position: "absolute",
+    bottom: 90,
+    left: 24,
+    right: 24,
+    backgroundColor: "#0F1A2C",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#00C0E8",
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    zIndex: 100,
+    shadowColor: "#00C0E8",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+  },
+  iconUnlockBannerText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  iconUnlockBannerSub: {
+    fontSize: 11,
+    color: "#00C0E8",
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 });
