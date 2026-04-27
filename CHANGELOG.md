@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/kk-11/capitillian/compare/v1.4.0...v1.4.1) (2026-04-27)
+
+
+### Bug Fixes
+
+* revert daily play limit to 3 ([eee703f](https://github.com/kk-11/capitillian/commit/eee703f4f0b5a411c7ff38b542c65329eed370b3))
+
 # [1.4.0](https://github.com/kk-11/capitillian/compare/v1.3.0...v1.4.0) (2026-04-27)
 
 
