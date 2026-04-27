@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/kk-11/capitillian/compare/v1.4.1...v1.5.0) (2026-04-27)
+
+
+### Features
+
+* new icon, alternate icon unlock system, 3D screenshot gallery ([7ccdf3f](https://github.com/kk-11/capitillian/commit/7ccdf3f2545de99cecfbde3260cf32987283b103))
+* update all icons to derive from new KAWS globe design ([c24a089](https://github.com/kk-11/capitillian/commit/c24a089f00964ceef5941c14af701922a8b68111))
+
 ## [1.4.1](https://github.com/kk-11/capitillian/compare/v1.4.0...v1.4.1) (2026-04-27)
 
 
