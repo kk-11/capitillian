@@ -27,7 +27,7 @@ import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
-import { getFaceValue, formatPopulation, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
+import { getFaceValue, formatPopulation, formatArea, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { colors } from "../theme/colors";
 import * as Haptics from "expo-haptics";
 import { useSounds } from "../hooks/useSounds";
@@ -149,7 +149,7 @@ export default function GameScreen() {
   const { state, startGame, restoreGame, selectCard } = useGameEngine();
   const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
   const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
-  const { counts: badgeCounts, increment: incrementBadge } = useBadgeProgress();
+  const { easyCounts, hcCounts, incrementEasy, incrementHc } = useBadgeProgress();
   const [gameMode, setGameMode] = useState<GameMode>("all");
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [isHardcore, setIsHardcore] = useState(false);
@@ -168,6 +168,7 @@ export default function GameScreen() {
   const currentPageRef = useRef(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const [globeCountry, setGlobeCountry] = useState<Country | null>(null);
+  const [globePanelExpanded, setGlobePanelExpanded] = useState(false);
   const [highlightCode, setHighlightCode] = useState<string | null>(null);
   const stopButtonOpacity = useRef(new Animated.Value(0)).current;
   // Track game-just-finished synchronously so the countdown appears immediately
@@ -269,9 +270,10 @@ export default function GameScreen() {
         setGameEndedAsFree(true);
         recordPlay();
       }
-      // Badge progress: perfect hardcore timed round
-      if (state.status === "won" && isHardcore && state.wrongGuesses === 0 && state.hasTimer) {
-        incrementBadge(gameMode);
+      // Badge progress: perfect timed rounds (easy and hardcore tracked separately)
+      if (state.status === "won" && state.wrongGuesses === 0 && state.hasTimer) {
+        if (isHardcore) incrementHc(gameMode);
+        else incrementEasy(gameMode);
       }
     }
     if (state.status === "ready" || state.status === "idle") {
@@ -345,6 +347,7 @@ export default function GameScreen() {
   const playsRemaining = Math.max(0, DAILY_PLAY_LIMIT - playsToday);
 
   const handleGlobeTap = (lat: number, lon: number, code?: string | null) => {
+    setGlobePanelExpanded(false);
     if (code) {
       const found = COUNTRIES.find(c => c.code === code);
       if (found) { setGlobeCountry(found); setHighlightCode(found.code); return; }
@@ -655,12 +658,16 @@ export default function GameScreen() {
                                 <Text style={styles.detailValue}>{country.capital}</Text>
                               </View>
                               <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Continent</Text>
-                                <Text style={styles.detailValue}>{country.continent}</Text>
+                                <Text style={styles.detailLabel}>Language</Text>
+                                <Text style={styles.detailValue}>{country.language}</Text>
                               </View>
                               <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Code</Text>
-                                <Text style={styles.detailValue}>{country.code}</Text>
+                                <Text style={styles.detailLabel}>Currency</Text>
+                                <Text style={styles.detailValue}>{country.currencyCode}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Continent</Text>
+                                <Text style={styles.detailValue}>{country.continent}{country.landlocked ? " · landlocked" : ""}{country.island ? " · island" : ""}</Text>
                               </View>
                             </View>
                           )}
@@ -732,16 +739,28 @@ export default function GameScreen() {
                                 <Text style={styles.detailValue}>{country.population.toLocaleString()}</Text>
                               </View>
                               <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Area</Text>
+                                <Text style={styles.detailValue}>{formatArea(country.area)}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Capital</Text>
                                 <Text style={styles.detailValue}>{country.capital}</Text>
                               </View>
                               <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Continent</Text>
-                                <Text style={styles.detailValue}>{country.continent}</Text>
+                                <Text style={styles.detailLabel}>Language</Text>
+                                <Text style={styles.detailValue}>{country.language}</Text>
                               </View>
                               <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Code</Text>
-                                <Text style={styles.detailValue}>{country.code}</Text>
+                                <Text style={styles.detailLabel}>Currency</Text>
+                                <Text style={styles.detailValue}>{country.currencyCode}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Calling code</Text>
+                                <Text style={styles.detailValue}>{country.callingCode}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Continent</Text>
+                                <Text style={styles.detailValue}>{country.continent}{country.landlocked ? " · landlocked" : ""}{country.island ? " · island" : ""}</Text>
                               </View>
                             </View>
                           )}
@@ -759,39 +778,56 @@ export default function GameScreen() {
         <View style={styles.page}>
           <SafeAreaView style={styles.safe}>
             <Text style={styles.listTitle}>Goals</Text>
-            <Text style={styles.goalsSubtitle}>Perfect · Hardcore · No mistakes</Text>
             <ScrollView
               style={styles.listScroll}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             >
               {BADGE_GROUPS.map(({ mode, label, emoji, tiers }) => {
-                const count = badgeCounts[mode] ?? 0;
+                const easyCount = easyCounts[mode] ?? 0;
+                const hcCount = hcCounts[mode] ?? 0;
                 return (
                   <View key={mode} style={styles.badgeGroup}>
                     <Text style={styles.continentHeader}>{emoji} {label}</Text>
                     {tiers.map(({ icon, name, req, legendary }) => {
-                      const unlocked = count >= req;
-                      const progress = Math.min(count, req) / req;
+                      const hcUnlocked = hcCount >= req;
+                      const easyUnlocked = easyCount >= req;
+                      const awakened = hcUnlocked || easyUnlocked;
+                      const progress = Math.min(hcCount, req) / req;
                       return (
                         <View
                           key={name}
-                          style={[styles.badgeRow, unlocked && styles.badgeRowUnlocked, legendary && styles.badgeRowLegendary]}
+                          style={[
+                            styles.badgeRow,
+                            awakened && styles.badgeRowUnlocked,
+                            legendary && styles.badgeRowLegendary,
+                            hcUnlocked && styles.badgeRowHcShiny,
+                          ]}
                         >
-                          <Text style={[styles.badgeTierIcon, unlocked && styles.badgeTierIconUnlocked]}>{icon}</Text>
+                          <Text style={[styles.badgeTierIcon, awakened && styles.badgeTierIconUnlocked]}>{icon}</Text>
                           <View style={styles.badgeInfo}>
                             <View style={styles.badgeNameRow}>
-                              <Text style={[styles.badgeName, unlocked && styles.badgeNameUnlocked, legendary && styles.badgeNameLegendary]}>
+                              <Text style={[
+                                styles.badgeName,
+                                awakened && styles.badgeNameUnlocked,
+                                legendary && styles.badgeNameLegendary,
+                                hcUnlocked && styles.badgeNameHcShiny,
+                              ]}>
                                 {name}
                               </Text>
-                              {unlocked && <Text style={styles.badgeCheck}>✓</Text>}
+                              {awakened && <Text style={[styles.badgeCheck, hcUnlocked && styles.badgeCheckHc]}>✓</Text>}
                             </View>
                             <View style={styles.badgeBarBg}>
-                              <View style={[styles.badgeBarFill, { width: `${progress * 100}%` as any }, legendary && styles.badgeBarLegendary]} />
+                              <View style={[
+                                styles.badgeBarFill,
+                                { width: `${progress * 100}%` as any },
+                                legendary && styles.badgeBarLegendary,
+                                hcUnlocked && styles.badgeBarHcShiny,
+                              ]} />
                             </View>
                           </View>
-                          <Text style={[styles.badgeCount, unlocked && styles.badgeCountUnlocked]}>
-                            {count}/{req}
+                          <Text style={[styles.badgeCount, hcUnlocked && styles.badgeCountHcShiny, !hcUnlocked && awakened && styles.badgeCountUnlocked]}>
+                            {hcCount}/{req}
                           </Text>
                         </View>
                       );
@@ -860,17 +896,47 @@ export default function GameScreen() {
       {currentPage === 1 && globeCountry && (
         <TouchableOpacity
           style={styles.globePanel}
-          onPress={() => setGlobeCountry(null)}
+          onPress={() => setGlobePanelExpanded(e => !e)}
           activeOpacity={0.9}
         >
           <View style={styles.globePanelRow}>
             <Text style={styles.globePanelFlag}>{globeCountry.flag}</Text>
             <View style={styles.globePanelText}>
               <Text style={styles.globePanelName}>{globeCountry.name}</Text>
-              <Text style={styles.globePanelCapital}>{globeCountry.capital}</Text>
+              <Text style={styles.globePanelCapital}>{globeCountry.capital} · {globeCountry.currencyCode} · {globeCountry.callingCode}</Text>
             </View>
             <Text style={styles.globePanelContinent}>{globeCountry.continent}</Text>
           </View>
+          {globePanelExpanded && (
+            <View style={styles.globePanelDetails}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Population</Text>
+                <Text style={styles.detailValue}>{globeCountry.population.toLocaleString()}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Area</Text>
+                <Text style={styles.detailValue}>{formatArea(globeCountry.area)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Language</Text>
+                <Text style={styles.detailValue}>{globeCountry.language}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Currency</Text>
+                <Text style={styles.detailValue}>{globeCountry.currencyCode}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Calling code</Text>
+                <Text style={styles.detailValue}>{globeCountry.callingCode}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Geography</Text>
+                <Text style={styles.detailValue}>
+                  {globeCountry.continent}{globeCountry.landlocked ? " · landlocked" : ""}{globeCountry.island ? " · island" : ""}
+                </Text>
+              </View>
+            </View>
+          )}
         </TouchableOpacity>
       )}
 
@@ -1045,7 +1111,7 @@ const styles = StyleSheet.create({
   // Globe country panel
   globePanel: {
     position: "absolute",
-    bottom: 80,
+    top: 60,
     left: 16,
     right: 16,
     backgroundColor: "rgba(20,20,24,0.92)",
@@ -1053,6 +1119,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 16,
+  },
+  globePanelDetails: {
+    marginTop: 12,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.08)",
+    paddingTop: 12,
   },
   globePanelRow: {
     flexDirection: "row",
@@ -1444,14 +1517,28 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   // Goals page
-  goalsSubtitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.6,
-    color: colors.textSecondary,
-    paddingHorizontal: 20,
-    paddingBottom: 4,
-    textTransform: "uppercase",
+  badgeRowHcShiny: {
+    borderColor: "rgba(255,215,0,0.6)",
+    backgroundColor: "rgba(30,22,8,0.95)",
+    shadowColor: "#ffd700",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  badgeNameHcShiny: {
+    color: "#ffd700",
+    fontWeight: "800",
+  },
+  badgeCheckHc: {
+    color: "#ffd700",
+  },
+  badgeBarHcShiny: {
+    backgroundColor: "#ffd700",
+  },
+  badgeCountHcShiny: {
+    color: "#ffd700",
+    opacity: 1,
   },
   badgeGroup: {
     marginBottom: 8,
