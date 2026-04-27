@@ -8,7 +8,7 @@ type GlobeProps = {
   interactive?: boolean;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
-  onGlobeTap?: (lat: number, lon: number) => void;
+  onGlobeTap?: (lat: number, lon: number, code?: string | null) => void;
   highlightCode?: string | null;
 };
 
@@ -91,6 +91,8 @@ var A2N = {
   "TM":795,"TV":798,"UG":800,"UA":804,"AE":784,"GB":826,"US":840,
   "UY":858,"UZ":860,"VU":548,"VE":862,"VN":704,"YE":887,"ZM":894,"ZW":716
 };
+var N2A = {};
+for (var _k in A2N) N2A[A2N[_k]] = _k;
 
 var countriesGeo = null;
 var hlFeature = null, hlAlpha = 0, hlExtrusion = 0;
@@ -115,6 +117,29 @@ window.setHighlight = function(code) {
   }
 };
 
+function pointInRing(x, y, ring) {
+  var inside = false;
+  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi))
+      inside = !inside;
+  }
+  return inside;
+}
+
+function countryCodeAtLatLon(lat, lon) {
+  if (!countriesGeo) return null;
+  for (var i = 0; i < countriesGeo.length; i++) {
+    var f = countriesGeo[i];
+    if (!f.geometry) continue;
+    var polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (var p = 0; p < polys.length; p++) {
+      if (pointInRing(lon, lat, polys[p][0])) return N2A[f.id] || null;
+    }
+  }
+  return null;
+}
+
 // Project a lat/lng point onto the canvas, optionally extruded above the sphere.
 function projectPt(lat, lng, extrusion) {
   var lr = lat * Math.PI / 180;
@@ -128,6 +153,10 @@ function projectPt(lat, lng, extrusion) {
   var nzs = -nyw * sinT + nzw * cosT;
   var nxs = nxw;
   if (nzs <= 0) return null;
+  // At zoom > 1 the rendered sphere is still clipped to radius R, so points
+  // whose screen projection lands outside that circle must be culled.
+  var invZ = 1 / currentZoom;
+  if (nxs * nxs + nys * nys > invZ * invZ) return null;
   var scale = R * currentZoom * (1 + extrusion);
   return [cx + nxs * scale, cy - nys * scale];
 }
@@ -332,8 +361,8 @@ canvas.addEventListener('touchmove', function(e) {
   if (e.touches.length === 1 && isDragging) {
     var dx = e.touches[0].clientX - lastTX;
     var dy = e.touches[0].clientY - lastTY;
-    currentLon  += dx * 0.010;
-    currentTilt -= dy * 0.010;
+    currentLon  += dx / (R * currentZoom);
+    currentTilt -= dy / (R * currentZoom);
     currentTilt = Math.max(-Math.PI/2, Math.min(Math.PI/2, currentTilt));
     targetLon = currentLon; targetTilt = currentTilt;
     lastTX = e.touches[0].clientX;
@@ -373,8 +402,9 @@ canvas.addEventListener('touchend', function(e) {
         var tapLat = Math.asin(Math.max(-1, Math.min(1, tny))) * 180 / Math.PI;
         var tapLon = (Math.atan2(tnx, tnz) - currentLon) * 180 / Math.PI;
         tapLon = ((tapLon + 180) % 360 + 360) % 360 - 180;
+        var tapCode = countryCodeAtLatLon(tapLat, tapLon);
         window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
-          JSON.stringify({ type: 'tap', lat: tapLat, lon: tapLon })
+          JSON.stringify({ type: 'tap', lat: tapLat, lon: tapLon, code: tapCode })
         );
       }
     } else if (Math.abs(dx) > 80 && dt < 350 && Math.abs(dx) > Math.abs(dy) * 2) {
@@ -414,7 +444,7 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
   const handleMessage = (e: { nativeEvent: { data: string } }) => {
     try {
       const msg = JSON.parse(e.nativeEvent.data);
-      if (msg.type === "tap") onGlobeTap?.(msg.lat, msg.lon);
+      if (msg.type === "tap") onGlobeTap?.(msg.lat, msg.lon, msg.code);
       else if (msg.type === "swipeLeft") onSwipeLeft?.();
       else if (msg.type === "swipeRight") onSwipeRight?.();
     } catch {

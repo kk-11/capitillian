@@ -12,6 +12,13 @@ jobs:
       platform: ios
       profile: production
 
+  submit_ios:
+    type: submit
+    needs: [build_ios_production]
+    params:
+      platform: ios
+      profile: production
+
   build_ios_preview:
     type: build
     params:

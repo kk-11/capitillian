@@ -344,11 +344,18 @@ export default function GameScreen() {
   const canPractice    = wrongCountries.length > 1 && (isPremium || !hasPracticedToday);
   const playsRemaining = Math.max(0, DAILY_PLAY_LIMIT - playsToday);
 
-  const handleGlobeTap = (lat: number, lon: number) => {
+  const handleGlobeTap = (lat: number, lon: number, code?: string | null) => {
+    if (code) {
+      const found = COUNTRIES.find(c => c.code === code);
+      if (found) { setGlobeCountry(found); setHighlightCode(found.code); return; }
+    }
     let nearest = COUNTRIES[0];
     let minDist = Infinity;
+    const cosLat = Math.cos(lat * Math.PI / 180);
     for (const c of COUNTRIES) {
-      const d = (c.lat - lat) ** 2 + (c.lng - lon) ** 2;
+      const dlat = c.lat - lat;
+      const dlon = (((c.lng - lon) + 540) % 360) - 180;
+      const d = dlat * dlat + (dlon * cosLat) ** 2;
       if (d < minDist) { minDist = d; nearest = c; }
     }
     setGlobeCountry(nearest);
