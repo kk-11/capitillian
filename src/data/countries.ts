@@ -302,7 +302,9 @@ export type GameMode =
   | "oceania"
   | "north america"
   | "south america"
-  | "caribbean";
+  | "caribbean"
+  | "landlocked"
+  | "island";
 
 export const MODE_LABELS: Record<GameMode, string> = {
   all:             "World",
@@ -314,6 +316,8 @@ export const MODE_LABELS: Record<GameMode, string> = {
   "north america": "N. America",
   "south america": "S. America",
   caribbean:       "Caribbean",
+  landlocked:      "Landlocked",
+  island:          "Island",
 };
 
 export const REGIONS: Record<GameMode, Country[]> = {
@@ -326,4 +330,6 @@ export const REGIONS: Record<GameMode, Country[]> = {
   "north america": NORTH_AMERICA,
   "south america": SOUTH_AMERICA,
   caribbean:       NORTH_AMERICA.filter(c => CARIBBEAN_CODES.has(c.code)),
+  landlocked:      COUNTRIES.filter(c => c.landlocked),
+  island:          COUNTRIES.filter(c => c.island),
 };

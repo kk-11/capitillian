@@ -7,99 +7,109 @@ beforeEach(async () => {
   jest.clearAllMocks();
 });
 
-describe("useBadgeProgress", () => {
-  it("starts with 0 for all modes", async () => {
+// ---------------------------------------------------------------------------
+// Initial state
+// ---------------------------------------------------------------------------
+
+describe("initial state", () => {
+  it("starts with 0 for all modes on both tracks", async () => {
     const { result } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(result.current.counts["all"]).toBe(0));
-    for (const val of Object.values(result.current.counts)) {
-      expect(val).toBe(0);
-    }
-  });
-
-  it("increment increases the count for the given mode", async () => {
-    const { result } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(result.current.counts["all"]).toBe(0));
-
-    act(() => { result.current.increment("all"); });
-    await waitFor(() => expect(result.current.counts["all"]).toBe(1));
-  });
-
-  it("increment only affects the target mode", async () => {
-    const { result } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(result.current.counts["all"]).toBe(0));
-
-    act(() => { result.current.increment("europe"); });
-    await waitFor(() => expect(result.current.counts["europe"]).toBe(1));
-    expect(result.current.counts["africa"]).toBe(0);
-    expect(result.current.counts["all"]).toBe(0);
-  });
-
-  it("increments accumulate correctly", async () => {
-    const { result } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(result.current.counts["all"]).toBe(0));
-
-    act(() => { result.current.increment("asia"); });
-    act(() => { result.current.increment("asia"); });
-    act(() => { result.current.increment("asia"); });
-    await waitFor(() => expect(result.current.counts["asia"]).toBe(3));
-  });
-
-  it("persists count to AsyncStorage", async () => {
-    const { result } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(result.current.counts["all"]).toBe(0));
-
-    act(() => { result.current.increment("all"); });
-    await waitFor(async () => {
-      const stored = await AsyncStorage.getItem("badge_hc_all");
-      expect(stored).toBe("1");
-    });
-  });
-
-  it("restores persisted counts on remount", async () => {
-    const { result: r1 } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(r1.current.counts["all"]).toBe(0));
-    act(() => { r1.current.increment("europe"); });
-    act(() => { r1.current.increment("europe"); });
-    await waitFor(() => expect(r1.current.counts["europe"]).toBe(2));
-
-    const { result: r2 } = renderHook(() => useBadgeProgress());
-    await waitFor(() => expect(r2.current.counts["europe"]).toBe(2));
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(0));
+    for (const val of Object.values(result.current.easyCounts)) expect(val).toBe(0);
+    for (const val of Object.values(result.current.hcCounts))   expect(val).toBe(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Badge tier thresholds
+// Easy track
 // ---------------------------------------------------------------------------
 
-describe("Badge tier thresholds", () => {
-  const TIERS = {
-    all:    [1, 10, 25, 100],
-    africa: [1, 5, 10],
-    asia:   [1, 5, 10],
-    europe: [1, 5, 10],
-  };
+describe("incrementEasy", () => {
+  it("increments easyCounts for the target mode", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(0));
 
-  const earned = (tiers: number[], count: number) => tiers.filter((t) => count >= t);
-
-  it("'all' mode has four tiers: 1, 10, 25, 100", () => {
-    expect(TIERS.all).toEqual([1, 10, 25, 100]);
+    act(() => { result.current.incrementEasy("all"); });
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(1));
   });
 
-  it("regional modes have three tiers: 1, 5, 10", () => {
-    for (const mode of ["africa", "asia", "europe"] as const) {
-      expect(TIERS[mode]).toEqual([1, 5, 10]);
-    }
+  it("does not affect hcCounts", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementEasy("europe"); });
+    await waitFor(() => expect(result.current.easyCounts["europe"]).toBe(1));
+    expect(result.current.hcCounts["europe"]).toBe(0);
   });
 
-  it("count of 0 earns no badge", () => {
-    expect(earned(TIERS.all, 0)).toHaveLength(0);
+  it("persists to badge_easy_ key in AsyncStorage", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementEasy("all"); });
+    await waitFor(async () => {
+      expect(await AsyncStorage.getItem("badge_easy_all")).toBe("1");
+    });
+    expect(await AsyncStorage.getItem("badge_hc_all")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hardcore track
+// ---------------------------------------------------------------------------
+
+describe("incrementHc", () => {
+  it("increments hcCounts for the target mode", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.hcCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementHc("all"); });
+    await waitFor(() => expect(result.current.hcCounts["all"]).toBe(1));
   });
 
-  it("count of 10 earns first two 'all' badges", () => {
-    expect(earned(TIERS.all, 10)).toHaveLength(2);
+  it("does not affect easyCounts", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.hcCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementHc("africa"); });
+    await waitFor(() => expect(result.current.hcCounts["africa"]).toBe(1));
+    expect(result.current.easyCounts["africa"]).toBe(0);
   });
 
-  it("count of 100 earns all four 'all' badges (legendary)", () => {
-    expect(earned(TIERS.all, 100)).toHaveLength(4);
+  it("persists to badge_hc_ key in AsyncStorage", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.hcCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementHc("all"); });
+    await waitFor(async () => {
+      expect(await AsyncStorage.getItem("badge_hc_all")).toBe("1");
+    });
+    expect(await AsyncStorage.getItem("badge_easy_all")).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dual-track independence
+// ---------------------------------------------------------------------------
+
+describe("dual-track independence", () => {
+  it("easy and hc counts accumulate independently on the same mode", async () => {
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(0));
+
+    act(() => { result.current.incrementEasy("all"); });
+    act(() => { result.current.incrementEasy("all"); });
+    act(() => { result.current.incrementHc("all"); });
+    await waitFor(() => expect(result.current.easyCounts["all"]).toBe(2));
+    expect(result.current.hcCounts["all"]).toBe(1);
+  });
+
+  it("restores both tracks from AsyncStorage on remount", async () => {
+    await AsyncStorage.setItem("badge_easy_asia", "4");
+    await AsyncStorage.setItem("badge_hc_asia",   "2");
+
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["asia"]).toBe(4));
+    expect(result.current.hcCounts["asia"]).toBe(2);
   });
 });

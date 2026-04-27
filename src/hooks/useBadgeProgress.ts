@@ -5,6 +5,7 @@ import type { GameMode } from "../data/countries";
 const MODES: GameMode[] = [
   "all", "africa", "asia", "europe", "eurasia",
   "north america", "south america", "oceania", "caribbean",
+  "landlocked", "island",
 ];
 
 const easyKey = (mode: GameMode) => `badge_easy_${mode}`;

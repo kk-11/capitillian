@@ -136,6 +136,22 @@ const BADGE_GROUPS: Array<{
       { icon: "🥇", name: "Master",   req: 10 },
     ],
   },
+  {
+    mode: "landlocked", label: "Landlocked", emoji: "🏔️",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "island", label: "Island Nations", emoji: "🏝️",
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -667,7 +683,15 @@ export default function GameScreen() {
                               </View>
                               <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Continent</Text>
-                                <Text style={styles.detailValue}>{country.continent}{country.landlocked ? " · landlocked" : ""}{country.island ? " · island" : ""}</Text>
+                                <Text style={styles.detailValue}>{country.continent}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🏔️  Landlocked</Text>
+                                <Text style={styles.detailValue}>{country.landlocked ? "Yes" : "No"}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🏝️  Island nation</Text>
+                                <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                               </View>
                             </View>
                           )}
@@ -726,10 +750,17 @@ export default function GameScreen() {
                             <View style={styles.countryText}>
                               <Text style={styles.countryName}>{country.name}</Text>
                               <Text style={styles.countryCapital}>{country.capital}</Text>
+                              <Text style={styles.countryMeta}>
+                                {country.language} · {country.currencyCode} · {country.callingCode} · {formatArea(country.area)}
+                              </Text>
                             </View>
                             <View style={styles.countryRight}>
                               <Text style={styles.countryPop}>{formatPopulation(country.population)}</Text>
                               <Text style={styles.countryCode}>{country.code}</Text>
+                              <View style={styles.countryTags}>
+                                {country.landlocked && <Text style={styles.countryTag}>🏔️</Text>}
+                                {country.island     && <Text style={styles.countryTag}>🏝️</Text>}
+                              </View>
                             </View>
                           </View>
                           {expanded && (
@@ -760,7 +791,15 @@ export default function GameScreen() {
                               </View>
                               <View style={styles.detailRow}>
                                 <Text style={styles.detailLabel}>Continent</Text>
-                                <Text style={styles.detailValue}>{country.continent}{country.landlocked ? " · landlocked" : ""}{country.island ? " · island" : ""}</Text>
+                                <Text style={styles.detailValue}>{country.continent}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🏔️  Landlocked</Text>
+                                <Text style={styles.detailValue}>{country.landlocked ? "Yes" : "No"}</Text>
+                              </View>
+                              <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🏝️  Island nation</Text>
+                                <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                               </View>
                             </View>
                           )}
@@ -930,10 +969,16 @@ export default function GameScreen() {
                 <Text style={styles.detailValue}>{globeCountry.callingCode}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Geography</Text>
-                <Text style={styles.detailValue}>
-                  {globeCountry.continent}{globeCountry.landlocked ? " · landlocked" : ""}{globeCountry.island ? " · island" : ""}
-                </Text>
+                <Text style={styles.detailLabel}>Continent</Text>
+                <Text style={styles.detailValue}>{globeCountry.continent}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>🏔️  Landlocked</Text>
+                <Text style={styles.detailValue}>{globeCountry.landlocked ? "Yes" : "No"}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>🏝️  Island nation</Text>
+                <Text style={styles.detailValue}>{globeCountry.island ? "Yes" : "No"}</Text>
               </View>
             </View>
           )}
@@ -1086,6 +1131,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
   },
+  countryMeta: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    opacity: 0.6,
+    marginTop: 1,
+  },
   countryRight: {
     alignItems: "flex-end",
     gap: 2,
@@ -1100,6 +1151,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.textSecondary,
     letterSpacing: 0.5,
+  },
+  countryTags: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  countryTag: {
+    fontSize: 10,
   },
   countryDetail: {
     borderTopWidth: 1,
