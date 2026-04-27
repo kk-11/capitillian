@@ -100,18 +100,90 @@
     padding: 64px 40px;
   }
 
-  .screenshots {
+  .screenshot-stage {
     display: flex;
-    gap: 16px;
-    margin-bottom: 64px;
-    overflow-x: auto;
+    flex-direction: column;
+    align-items: center;
+    padding: 72px 40px 96px;
+    perspective: 1200px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
-  .screenshots img {
-    height: 200px;
-    border: 6px solid #1A1A1A;
+  .card-flip {
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .card-3d {
+    position: relative;
+    transform-style: preserve-3d;
+    border-radius: 36px;
+    will-change: transform;
+  }
+
+  .card-3d img {
+    height: 580px;
+    border: 5px solid #1A1A1A;
+    border-radius: 32px;
     display: block;
-    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  .card-3d .glare {
+    position: absolute;
+    inset: 0;
+    border-radius: 32px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .card-3d .shadow-plane {
+    position: absolute;
+    bottom: -40px;
+    left: 6%;
+    right: 6%;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.3);
+    filter: blur(24px);
+    z-index: 0;
+    transition: transform 0.08s linear, opacity 0.08s linear;
+  }
+
+  .ss-dots {
+    display: flex;
+    gap: 10px;
+    margin-top: 40px;
+  }
+
+  .ss-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    opacity: 0.18;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+
+  .ss-dot.active {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+
+  .ss-hint {
+    margin-top: 16px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.3;
   }
 
   section {
@@ -363,6 +435,124 @@
     loadBoard();
   };
   startSession();
+})();
+</script>
+
+<div class="screenshot-stage" id="ss-stage">
+  <div class="card-flip" id="ss-flip">
+    <div class="card-3d" id="ss-card">
+      <img id="ss-img" src="game-screen.png" alt="Capitillian game screen">
+      <div class="glare" id="ss-glare"></div>
+      <div class="shadow-plane" id="ss-shadow"></div>
+    </div>
+  </div>
+  <div class="ss-dots" id="ss-dots"></div>
+  <div class="ss-hint">click to explore</div>
+</div>
+
+<script>
+(function() {
+  const IMAGES = [
+    { src: 'game-screen.png',     alt: 'Game screen' },
+    { src: 'globe-screen.png',    alt: 'Globe screen' },
+    { src: 'countries-list.png',  alt: 'Countries list' },
+    { src: 'waiting-screen.png',  alt: 'Waiting screen' },
+  ];
+
+  const MAX_TILT = 16;
+  const DEPTH    = 36;
+  const FLIP_MS  = 280;
+
+  let current  = 0;
+  let flipping = false;
+  let tiltRx   = 2;
+  let tiltRy   = -6;
+
+  const stage  = document.getElementById('ss-stage');
+  const flipEl = document.getElementById('ss-flip');
+  const card   = document.getElementById('ss-card');
+  const img    = document.getElementById('ss-img');
+  const glare  = document.getElementById('ss-glare');
+  const shadow = document.getElementById('ss-shadow');
+  const dotsEl = document.getElementById('ss-dots');
+
+  // Build dots
+  IMAGES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'ss-dot' + (i === 0 ? ' active' : '');
+    dotsEl.appendChild(d);
+  });
+
+  function updateDots() {
+    dotsEl.querySelectorAll('.ss-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  function applyTilt(rx, ry, active) {
+    tiltRx = rx; tiltRy = ry;
+    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(${active ? DEPTH : 0}px)`;
+    card.style.boxShadow = active
+      ? `${-ry * 1.4}px ${rx * 1.4 + 20}px 60px rgba(0,0,0,0.36), 0 0 70px rgba(249,178,0,0.12)`
+      : `0 20px 60px rgba(0,0,0,0.22)`;
+    if (glare) {
+      const gx = ((ry / MAX_TILT) * 0.5 + 0.5) * 100;
+      const gy = ((-rx / MAX_TILT) * 0.5 + 0.5) * 100;
+      glare.style.background = `radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,0.36) 0%, transparent 55%)`;
+      glare.style.opacity = active ? '1' : '0';
+    }
+    if (shadow) {
+      shadow.style.transform = `translateX(${ry * 1.1}px) translateY(${-rx * 0.8 + 8}px) scaleX(0.88)`;
+      shadow.style.opacity = active ? '0.9' : '0.55';
+    }
+  }
+
+  // idle tilt
+  applyTilt(2, -6, false);
+
+  // Mouse tracking
+  card.addEventListener('mousemove', e => {
+    if (flipping) return;
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    applyTilt(-(y - 0.5) * MAX_TILT * 2, (x - 0.5) * MAX_TILT * 2, true);
+  });
+
+  card.addEventListener('mouseleave', () => {
+    if (flipping) return;
+    card.style.transition = 'transform 0.5s cubic-bezier(.03,.98,.52,.99), box-shadow 0.5s';
+    applyTilt(2, -6, false);
+    setTimeout(() => { card.style.transition = ''; }, 520);
+  });
+
+  // Flip on click
+  stage.addEventListener('click', () => {
+    if (flipping) return;
+    flipping = true;
+
+    // Phase 1: fold away (0 → 90deg on the flip wrapper)
+    flipEl.style.transition = `transform ${FLIP_MS}ms cubic-bezier(0.4, 0, 1, 1)`;
+    flipEl.style.transform   = 'rotateY(90deg)';
+
+    setTimeout(() => {
+      // Swap image at edge-on
+      current = (current + 1) % IMAGES.length;
+      img.src = IMAGES[current].src;
+      img.alt = IMAGES[current].alt;
+      updateDots();
+
+      // Phase 2: unfold from -90 → 0
+      flipEl.style.transition = 'none';
+      flipEl.style.transform  = 'rotateY(-90deg)';
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        flipEl.style.transition = `transform ${FLIP_MS}ms cubic-bezier(0, 0, 0.6, 1)`;
+        flipEl.style.transform  = 'rotateY(0deg)';
+        setTimeout(() => { flipping = false; }, FLIP_MS);
+      }));
+    }, FLIP_MS);
+  });
 })();
 </script>
 
