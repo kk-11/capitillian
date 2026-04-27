@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/kk-11/capitillian/compare/v1.3.0...v1.4.0) (2026-04-27)
+
+
+### Features
+
+* badge tier state logic with HC window, ([2e29de2](https://github.com/kk-11/capitillian/commit/2e29de27e84c91c2a9a7c7397033c59701fe5529))
+
 # [1.3.0](https://github.com/kk-11/capitillian/compare/v1.2.5...v1.3.0) (2026-04-27)
 
 
