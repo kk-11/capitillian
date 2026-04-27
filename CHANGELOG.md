@@ -1,3 +1,11 @@
+# [1.3.0](https://github.com/kk-11/capitillian/compare/v1.2.5...v1.3.0) (2026-04-27)
+
+
+### Features
+
+* dual badge tracks (easy awakens, hardcore ([7ba8a0a](https://github.com/kk-11/capitillian/commit/7ba8a0ab39592fb8e957347b42feb017e276a406))
+* landlocked + island as game modes with emoji ([f7e5a4a](https://github.com/kk-11/capitillian/commit/f7e5a4a0399c65fb17ff7255f45e8660fe002597))
+
 ## [1.2.5](https://github.com/kk-11/capitillian/compare/v1.2.4...v1.2.5) (2026-04-09)
 
 
