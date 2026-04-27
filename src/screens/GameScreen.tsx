@@ -28,6 +28,7 @@ import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
 import { getFaceValue, formatPopulation, formatArea, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
+import { badgeTierState } from "../utils/badgeTierState";
 import { colors } from "../theme/colors";
 import * as Haptics from "expo-haptics";
 import { useSounds } from "../hooks/useSounds";
@@ -829,10 +830,8 @@ export default function GameScreen() {
                   <View key={mode} style={styles.badgeGroup}>
                     <Text style={styles.continentHeader}>{emoji} {label}</Text>
                     {tiers.map(({ icon, name, req, legendary }) => {
-                      const hcUnlocked = hcCount >= req;
-                      const easyUnlocked = easyCount >= req;
-                      const awakened = hcUnlocked || easyUnlocked;
-                      const progress = Math.min(hcCount, req) / req;
+                      const { hcUnlocked, easyUnlocked, awakened, showHc, displayCount, progress } =
+                        badgeTierState(easyCount, hcCount, { req, legendary }, tiers);
                       return (
                         <View
                           key={name}
@@ -861,12 +860,16 @@ export default function GameScreen() {
                                 styles.badgeBarFill,
                                 { width: `${progress * 100}%` as any },
                                 legendary && styles.badgeBarLegendary,
-                                hcUnlocked && styles.badgeBarHcShiny,
+                                (hcUnlocked || showHc) && styles.badgeBarHcShiny,
                               ]} />
                             </View>
                           </View>
-                          <Text style={[styles.badgeCount, hcUnlocked && styles.badgeCountHcShiny, !hcUnlocked && awakened && styles.badgeCountUnlocked]}>
-                            {hcCount}/{req}
+                          <Text style={[
+                            styles.badgeCount,
+                            easyUnlocked && !showHc && styles.badgeCountEasy,
+                            (hcUnlocked || showHc) && styles.badgeCountHcShiny,
+                          ]}>
+                            {hcUnlocked && legendary ? "LEGEND" : `${displayCount}/${req}`}
                           </Text>
                         </View>
                       );
@@ -1594,10 +1597,6 @@ const styles = StyleSheet.create({
   badgeBarHcShiny: {
     backgroundColor: "#ffd700",
   },
-  badgeCountHcShiny: {
-    color: "#ffd700",
-    opacity: 1,
-  },
   badgeGroup: {
     marginBottom: 8,
   },
@@ -1683,5 +1682,14 @@ const styles = StyleSheet.create({
   badgeCountUnlocked: {
     opacity: 1,
     color: colors.textPrimary,
+  },
+  badgeCountEasy: {
+    opacity: 0.8,
+    color: colors.textPrimary,
+  },
+  badgeCountHcShiny: {
+    opacity: 1,
+    color: "#ffd700",
+    fontWeight: "800",
   },
 });
