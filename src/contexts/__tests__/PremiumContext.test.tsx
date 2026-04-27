@@ -56,10 +56,13 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Run as production by default so tests reflect real behaviour
+  (global as any).__DEV__ = false;
   mockGetCustomerInfo.mockResolvedValue(freeCustomerInfo);
   mockAddListener.mockImplementation(() => {});
   mockRemoveListener.mockImplementation(() => {});
 });
+
 
 // ---------------------------------------------------------------------------
 // Initialisation
@@ -254,3 +257,4 @@ describe("customer info update listener", () => {
     expect(mockRemoveListener).toHaveBeenCalled();
   });
 });
+

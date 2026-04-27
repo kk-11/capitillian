@@ -606,7 +606,7 @@ export default function GameScreen() {
                       {status === "won" ? "Play Again" : "Try Again"}
                     </Text>
                     {!isPremium && (
-                      <Text style={styles.playsRemainingText}>
+                      <Text testID="plays-remaining" style={styles.playsRemainingText}>
                         {playsRemaining} {playsRemaining === 1 ? "play" : "plays"} left today
                       </Text>
                     )}

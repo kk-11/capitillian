@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export const KEY_PLAYED   = "daily_last_played";
 const KEY_PRACTICE = "daily_practice_used";
-export const DAILY_PLAY_LIMIT = 999;
+export const DAILY_PLAY_LIMIT = 3;
 
 // Local calendar date, so the reset is at the user's local midnight.
 function localDateStr(): string {
