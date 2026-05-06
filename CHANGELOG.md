@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/kk-11/capitillian/compare/v1.6.0...v1.7.0) (2026-05-06)
+
+
+### Features
+
+* sort goals by region size, world ([5ddfc99](https://github.com/kk-11/capitillian/commit/5ddfc99557418b78ec8fa7a112476c86ffa95885))
+
 # [1.6.0](https://github.com/kk-11/capitillian/compare/v1.5.0...v1.6.0) (2026-05-06)
 
 
