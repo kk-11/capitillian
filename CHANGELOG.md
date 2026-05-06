@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/kk-11/capitillian/compare/v1.7.0...v1.7.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* skip RevenueCat init and guard ([abf4e53](https://github.com/kk-11/capitillian/commit/abf4e53ab79bd8971b73029421ea2d72076be071))
+
 # [1.7.0](https://github.com/kk-11/capitillian/compare/v1.6.0...v1.7.0) (2026-05-06)
 
 
