@@ -153,10 +153,6 @@ function projectPt(lat, lng, extrusion) {
   var nzs = -nyw * sinT + nzw * cosT;
   var nxs = nxw;
   if (nzs <= 0) return null;
-  // At zoom > 1 the rendered sphere is still clipped to radius R, so points
-  // whose screen projection lands outside that circle must be culled.
-  var invZ = 1 / currentZoom;
-  if (nxs * nxs + nys * nys > invZ * invZ) return null;
   var scale = R * currentZoom * (1 + extrusion);
   return [cx + nxs * scale, cy - nys * scale];
 }
@@ -276,10 +272,11 @@ function draw() {
   const imgData = ctx.createImageData(cw, ch);
   const pix = imgData.data;
   const effR = R * currentZoom;
-  const xMin = Math.max(0, Math.floor(cx - R) - 1);
-  const xMax = Math.min(cw - 1, Math.ceil(cx + R) + 1);
-  const yMin = Math.max(0, Math.floor(cy - R) - 1);
-  const yMax = Math.min(ch - 1, Math.ceil(cy + R) + 1);
+  const effR2 = effR * effR;
+  const xMin = Math.max(0, Math.floor(cx - effR) - 1);
+  const xMax = Math.min(cw - 1, Math.ceil(cx + effR) + 1);
+  const yMin = Math.max(0, Math.floor(cy - effR) - 1);
+  const yMax = Math.min(ch - 1, Math.ceil(cy + effR) + 1);
   const cosT = Math.cos(currentTilt);
   const sinT = Math.sin(currentTilt);
 
@@ -288,7 +285,7 @@ function draw() {
     const dy2 = dy * dy;
     for (let px = xMin; px <= xMax; px++) {
       const dx = px - cx;
-      if (dx * dx + dy2 > R2) continue;
+      if (dx * dx + dy2 > effR2) continue;
       const nx   =  dx / effR;
       const ny_s = -dy / effR;
       const nzSq = 1 - nx * nx - ny_s * ny_s;
@@ -320,12 +317,12 @@ function draw() {
   drawHighlight();
 
   // Atmosphere glow
-  const atmo = ctx.createRadialGradient(cx, cy, R*0.88, cx, cy, R*1.18);
+  const atmo = ctx.createRadialGradient(cx, cy, effR*0.88, cx, cy, effR*1.18);
   atmo.addColorStop(0,   'rgba(40,110,230,0.18)');
   atmo.addColorStop(0.5, 'rgba(30,80,200,0.08)');
   atmo.addColorStop(1,   'rgba(20,60,180,0)');
   ctx.beginPath();
-  ctx.arc(cx, cy, R*1.18, 0, Math.PI*2);
+  ctx.arc(cx, cy, effR*1.18, 0, Math.PI*2);
   ctx.fillStyle = atmo;
   ctx.fill();
 }

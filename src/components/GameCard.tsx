@@ -108,28 +108,28 @@ const styles = StyleSheet.create({
   card: {
     height: 56,
     borderRadius: 12,
-    backgroundColor: "rgba(18, 18, 22, 0.82)",
+    backgroundColor: "rgba(237, 231, 224, 0.9)",
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 6,
     overflow: "hidden",
   },
   cardSelected: {
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#e0d8ce",
     borderColor: colors.primary,
   },
   cardWrong: {
-    backgroundColor: "#3a0a0a",
-    borderColor: "#ff4444",
+    backgroundColor: "#f5d8d8",
+    borderColor: "#cc5555",
   },
   cardMatched: {
-    backgroundColor: "#0a2a0a",
-    borderColor: "#44cc44",
+    backgroundColor: "#d4ecd4",
+    borderColor: "#55aa66",
   },
   cardSettled: {
-    backgroundColor: "#0d1a0d",
-    borderColor: "#1e3a1e",
-    opacity: 0.5,
+    backgroundColor: "#e4ece2",
+    borderColor: "#b8ccb8",
+    opacity: 0.55,
   },
   inner: {
     flex: 1,

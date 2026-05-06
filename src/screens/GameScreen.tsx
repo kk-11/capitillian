@@ -38,7 +38,7 @@ import { useSounds } from "../hooks/useSounds";
 // ---------------------------------------------------------------------------
 
 function CardSkeleton() {
-  return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(18,18,22,0.4)", borderWidth: 1, borderColor: "rgba(255,255,255,0.04)", marginBottom: 6 }} />;
+  return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(210,200,190,0.6)", borderWidth: 1, borderColor: "rgba(45,37,32,0.08)", marginBottom: 6 }} />;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -1054,10 +1054,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(45,37,32,0.28)",
   },
   dotActive: {
-    backgroundColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(45,37,32,0.82)",
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -1178,7 +1178,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: 16,
     right: 16,
-    backgroundColor: "rgba(20,20,24,0.92)",
+    backgroundColor: "rgba(245,240,235,0.96)",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 6,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: "rgba(45,37,32,0.12)",
     paddingTop: 12,
   },
   globePanelRow: {
@@ -1279,7 +1279,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     letterSpacing: 1.2,
-    color: "rgba(255,255,255,0.55)",
+    color: "rgba(30,25,20,0.45)",
   },
   controlsLocked: {
     opacity: 0.35,
@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   hardcoreLabelActive: {
-    color: "#ff4444",
+    color: "#cc2222",
   },
   hardcoreDots: {
     flexDirection: "row",
@@ -1377,7 +1377,7 @@ const styles = StyleSheet.create({
   // Overlays
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.85)",
+    backgroundColor: "rgba(245,240,235,0.97)",
     padding: 16,
   },
   endScroll: {
@@ -1421,14 +1421,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#1A1A00",
+    backgroundColor: "#fff3cc",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
     width: "100%",
   },
   streakBannerBroken: {
-    backgroundColor: "#1A0000",
+    backgroundColor: "#ffe0e0",
   },
   streakFire: {
     fontSize: 28,
@@ -1436,13 +1436,13 @@ const styles = StyleSheet.create({
   streakCount: {
     fontSize: 36,
     fontWeight: "900",
-    color: "#FFD60A",
+    color: "#a07800",
     lineHeight: 40,
   },
   streakLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#AAA",
+    color: "#8a7a6e",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -1503,14 +1503,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: "center",
-    backgroundColor: "#16161a",
+    backgroundColor: "#ede8f8",
     borderWidth: 1,
-    borderColor: "#333340",
+    borderColor: "#c8c0e8",
   },
   upgradeText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#9988ff",
+    color: "#5848b0",
     letterSpacing: 0.3,
   },
   wrongSection: {
@@ -1582,23 +1582,23 @@ const styles = StyleSheet.create({
   },
   // Goals page
   badgeRowHcShiny: {
-    borderColor: "rgba(255,215,0,0.6)",
-    backgroundColor: "rgba(30,22,8,0.95)",
-    shadowColor: "#ffd700",
+    borderColor: "rgba(180,140,0,0.5)",
+    backgroundColor: "rgba(255,248,220,0.98)",
+    shadowColor: "#c09000",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 8,
   },
   badgeNameHcShiny: {
-    color: "#ffd700",
+    color: "#8a6000",
     fontWeight: "800",
   },
   badgeCheckHc: {
-    color: "#ffd700",
+    color: "#8a6000",
   },
   badgeBarHcShiny: {
-    backgroundColor: "#ffd700",
+    backgroundColor: "#c09000",
   },
   badgeGroup: {
     marginBottom: 8,
@@ -1618,11 +1618,11 @@ const styles = StyleSheet.create({
   },
   badgeRowUnlocked: {
     opacity: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(45,37,32,0.12)",
   },
   badgeRowLegendary: {
-    borderColor: "rgba(255,200,50,0.35)",
-    backgroundColor: "rgba(30,22,8,0.9)",
+    borderColor: "rgba(180,140,0,0.45)",
+    backgroundColor: "rgba(255,248,220,0.75)",
   },
   badgeTierIcon: {
     fontSize: 24,
@@ -1651,28 +1651,28 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   badgeNameLegendary: {
-    color: "#ffd700",
+    color: "#8a6000",
     fontWeight: "800",
     letterSpacing: 0.5,
   },
   badgeCheck: {
     fontSize: 12,
-    color: "#4ade80",
+    color: "#1a8040",
     fontWeight: "800",
   },
   badgeBarBg: {
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(45,37,32,0.12)",
     borderRadius: 2,
     overflow: "hidden",
   },
   badgeBarFill: {
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.35)",
+    backgroundColor: "rgba(45,37,32,0.3)",
     borderRadius: 2,
   },
   badgeBarLegendary: {
-    backgroundColor: "#ffd700",
+    backgroundColor: "#c09000",
   },
   badgeCount: {
     fontSize: 12,
@@ -1692,7 +1692,7 @@ const styles = StyleSheet.create({
   },
   badgeCountHcShiny: {
     opacity: 1,
-    color: "#ffd700",
+    color: "#8a6000",
     fontWeight: "800",
   },
 });
