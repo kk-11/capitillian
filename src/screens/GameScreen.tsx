@@ -823,12 +823,18 @@ export default function GameScreen() {
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             >
-              {BADGE_GROUPS.map(({ mode, label, emoji, tiers }) => {
+              {[...BADGE_GROUPS]
+                .sort((a, b) => {
+                  if (a.mode === "all") return -1;
+                  if (b.mode === "all") return 1;
+                  return REGIONS[b.mode].length - REGIONS[a.mode].length;
+                })
+                .map(({ mode, label, emoji, tiers }) => {
                 const easyCount = easyCounts[mode] ?? 0;
                 const hcCount = hcCounts[mode] ?? 0;
                 return (
                   <View key={mode} style={styles.badgeGroup}>
-                    <Text style={styles.continentHeader}>{emoji} {label}</Text>
+                    <Text style={styles.continentHeader}>{emoji} {label} · {REGIONS[mode].length}</Text>
                     {tiers.map(({ icon, name, req, legendary }) => {
                       const { hcUnlocked, easyUnlocked, awakened, showHc, displayCount, progress } =
                         badgeTierState(easyCount, hcCount, { req, legendary }, tiers);
