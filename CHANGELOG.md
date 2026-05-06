@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/kk-11/capitillian/compare/v1.5.0...v1.6.0) (2026-05-06)
+
+
+### Features
+
+* switch UI from dark to light cream ([f72adba](https://github.com/kk-11/capitillian/commit/f72adba5cf75da4c8377b369fab7a52ff9a15007))
+
 # [1.5.0](https://github.com/kk-11/capitillian/compare/v1.4.1...v1.5.0) (2026-04-27)
 
 
