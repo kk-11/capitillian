@@ -6,6 +6,7 @@ import Constants from "expo-constants";
 // ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
 const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
 const ENTITLEMENT_ID = "premium";
+const IS_EXPO_GO = __DEV__ && Constants.appOwnership === "expo";
 
 type PremiumContextValue = {
   isPremium: boolean;
@@ -26,9 +27,11 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
-    if (!__DEV__ || Constants.appOwnership !== 'expo') {
-      Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    if (IS_EXPO_GO) {
+      setInitializing(false);
+      return;
     }
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
     Purchases.getCustomerInfo()
       .then(checkPremium)
@@ -40,6 +43,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const purchase = async () => {
+    if (IS_EXPO_GO) throw new Error("Purchases unavailable in Expo Go");
     try {
       const offerings = await Purchases.getOfferings();
       const pkg = offerings.current?.availablePackages[0];
@@ -53,6 +57,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   };
 
   const restorePurchases = async (): Promise<boolean> => {
+    if (IS_EXPO_GO) throw new Error("Purchases unavailable in Expo Go");
     try {
       const info = await Purchases.restorePurchases();
       const hasPremium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
