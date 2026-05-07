@@ -1,26 +1,27 @@
-name: Production Build
-
-on:
-  push:
-    tags:
-      - v*
-
-jobs:
-  build_ios_production:
-    type: build
-    params:
-      platform: ios
-      profile: production
-
-  submit_ios:
-    type: submit
-    needs: [build_ios_production]
-    params:
-      platform: ios
-      profile: production
-
-  build_ios_preview:
-    type: build
-    params:
-      platform: ios
-      profile: preview
+# Disabled — out of EAS credits, builds are run manually via Xcode for now.
+# name: Production Build
+#
+# on:
+#   push:
+#     tags:
+#       - v*
+#
+# jobs:
+#   build_ios_production:
+#     type: build
+#     params:
+#       platform: ios
+#       profile: production
+#
+#   submit_ios:
+#     type: submit
+#     needs: [build_ios_production]
+#     params:
+#       platform: ios
+#       profile: production
+#
+#   build_ios_preview:
+#     type: build
+#     params:
+#       platform: ios
+#       profile: preview

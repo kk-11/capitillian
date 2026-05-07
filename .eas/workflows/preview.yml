@@ -1,13 +1,14 @@
-name: Preview Build
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build_ios:
-    type: build
-    params:
-      platform: ios
-      profile: preview
+# Disabled — out of EAS credits, builds are run manually via Xcode for now.
+# name: Preview Build
+#
+# on:
+#   push:
+#     branches:
+#       - main
+#
+# jobs:
+#   build_ios:
+#     type: build
+#     params:
+#       platform: ios
+#       profile: preview
