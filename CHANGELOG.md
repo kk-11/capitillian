@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/kk-11/capitillian/compare/v1.7.1...v1.7.2) (2026-05-07)
+
+
+### Bug Fixes
+
+* match RevenueCat entitlement id Capitillian Premium ([854199d](https://github.com/kk-11/capitillian/commit/854199d4735c5376d1a1e111dfc7cc947e4624cd))
+
 ## [1.7.1](https://github.com/kk-11/capitillian/compare/v1.7.0...v1.7.1) (2026-05-06)
 
 
