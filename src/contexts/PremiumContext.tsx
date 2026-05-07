@@ -5,7 +5,7 @@ import Constants from "expo-constants";
 
 // ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
 const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
-const ENTITLEMENT_ID = "premium";
+const ENTITLEMENT_ID = "Capitillian Premium";
 const IS_EXPO_GO = __DEV__ && Constants.appOwnership === "expo";
 
 type PremiumContextValue = {

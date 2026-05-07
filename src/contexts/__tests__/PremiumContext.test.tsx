@@ -42,7 +42,7 @@ jest.mock("react-native-purchases", () => ({
 function makeCustomerInfo(isPremium: boolean) {
   return {
     entitlements: {
-      active: isPremium ? { premium: { identifier: "premium" } } : {},
+      active: isPremium ? { "Capitillian Premium": { identifier: "Capitillian Premium" } } : {},
     },
   };
 }
