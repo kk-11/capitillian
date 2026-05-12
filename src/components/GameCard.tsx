@@ -40,7 +40,7 @@ export default function GameCard({
 
   // Waterfall fade in on mount
   useEffect(() => {
-    const baseDelay = introPlayed ? 0 : 2600;
+    const baseDelay = introPlayed ? 0 : 195;
     const t = setTimeout(() => {
       introPlayed = true;
       Animated.timing(fadeAnim, {

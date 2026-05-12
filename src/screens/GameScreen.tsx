@@ -188,6 +188,10 @@ export default function GameScreen() {
   const [globePanelExpanded, setGlobePanelExpanded] = useState(false);
   const [highlightCode, setHighlightCode] = useState<string | null>(null);
   const stopButtonOpacity = useRef(new Animated.Value(0)).current;
+  const boardOpacity = useRef(new Animated.Value(0)).current;
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const footerAnim = useRef(new Animated.Value(0)).current;
   // Track game-just-finished synchronously so the countdown appears immediately
   // without waiting for the async AsyncStorage write in recordPlay.
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
@@ -206,7 +210,7 @@ export default function GameScreen() {
           AsyncStorage.getItem(KEY_PLAYED),
         ]);
 
-        const limitReached = !isPremium && parsePlayed(playedRaw) >= DAILY_PLAY_LIMIT;
+        const limitReached = !__DEV__ && !isPremium && parsePlayed(playedRaw) >= DAILY_PLAY_LIMIT;
 
         if (prefsRaw) {
           const prefs = JSON.parse(prefsRaw) as { gameMode: GameMode; isHardcore: boolean };
@@ -265,10 +269,12 @@ export default function GameScreen() {
   }, [state.status, state.leftCards, state.rightCards, state.pool, state.pairsMatched,
       state.wrongGuesses, state.secondsLeft, state.pendingMatched]);
 
-  // Reset focused country when a new game starts
+  // Focus first card's country on new game
   useEffect(() => {
     if (status === "ready") {
-      setFocusedCountry(null);
+      const first = leftCards[0] ?? null;
+      setFocusedCountry(first);
+      setHighlightCode(first?.code ?? null);
     }
   }, [status]);
 
@@ -342,6 +348,15 @@ export default function GameScreen() {
       play("match");
     }
   }, [matchFlash]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerAnim, { toValue: 1, duration: 600, delay: 0, useNativeDriver: true }),
+      Animated.timing(headerSlide, { toValue: 0, duration: 1400, delay: 0, useNativeDriver: true }),
+      Animated.timing(footerAnim, { toValue: 1, duration: 600, delay: 0, useNativeDriver: true }),
+      Animated.timing(boardOpacity, { toValue: 1, duration: 600, delay: 510, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     Animated.timing(stopButtonOpacity, {
@@ -428,8 +443,6 @@ export default function GameScreen() {
         onGlobeTap={handleGlobeTap}
         highlightCode={highlightCode}
       />
-      {isHardcore && currentPage === 0 && <HardcoreVignette />}
-
       {/* ------------------------------------------------------------------ */}
       {/* Animated pager row — slides horizontally, globe shows through      */}
       {/* ------------------------------------------------------------------ */}
@@ -439,7 +452,10 @@ export default function GameScreen() {
         {/* ---------------------------------------- */}
         <View style={styles.page}>
           <SafeAreaView style={styles.safe}>
-          <View style={styles.topBar}>
+          <Animated.View style={[styles.topBar, {
+            opacity: headerAnim,
+            transform: [{ translateY: headerSlide }],
+          }]}>
             <View>
               {hasTimer ? (
                 <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
@@ -477,9 +493,9 @@ export default function GameScreen() {
               </TouchableOpacity>
               <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={[styles.board]}>
+          <Animated.View style={[styles.board, { opacity: boardOpacity }]}>
             <Animated.View
               style={[styles.stopButtonAbsolute, { opacity: stopButtonOpacity }]}
               pointerEvents={status === "playing" ? "auto" : "none"}
@@ -535,7 +551,7 @@ export default function GameScreen() {
                       onPress={() => handleCardPress("right", i)}
                       disabled={isDisabled || pendingMatched.includes(card.code)}
                       index={i}
-                      columnOffset={60}
+                      columnOffset={75}
                     />
                   ))}
                   {Array.from({ length: Math.max(0, BOARD_SIZE - rightCards.length) }).map((_, i) => (
@@ -544,7 +560,7 @@ export default function GameScreen() {
                 </View>
               </View>
             </ScrollView>
-          </View>
+          </Animated.View>
 
           {(status === "won" || status === "timeout" || (status === "idle" && hasPlayedToday && !isPremium)) && (
             <View style={styles.overlay}>
@@ -891,29 +907,36 @@ export default function GameScreen() {
         </View>
       </Animated.View>
 
+      {isHardcore && currentPage === 0 && <HardcoreVignette />}
 
       {/* ------------------------------------------------------------------ */}
-      {/* Page dots                                                           */}
+      {/* Page dots + branding                                               */}
       {/* ------------------------------------------------------------------ */}
-      <TouchableOpacity
-        style={styles.dotsContainer}
-        onPress={() => goToPage((currentPage + 1) % 4)}
-        activeOpacity={1}
-        hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={[styles.dot, currentPage === i && styles.dotActive]} />
-        ))}
-      </TouchableOpacity>
+      <Animated.View style={{
+        ...StyleSheet.absoluteFillObject,
+        opacity: footerAnim,
+        transform: [{ translateY: footerAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+      }} pointerEvents="box-none">
+        <TouchableOpacity
+          style={styles.dotsContainer}
+          onPress={() => goToPage((currentPage + 1) % 4)}
+          activeOpacity={1}
+          hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
+        >
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[styles.dot, currentPage === i && styles.dotActive]} />
+          ))}
+        </TouchableOpacity>
 
-      {/* Branding */}
-      <TouchableOpacity onPress={() => setFreePalestine(f => !f)} activeOpacity={0.7} style={styles.brandingTouchable}>
-        {freePalestine ? (
-          <Text style={styles.branding}>🇵🇸 free palestine</Text>
-        ) : (
-          <Text style={styles.branding}>{GLOBE_FRAMES[globeFrame]} capitillian</Text>
-        )}
-      </TouchableOpacity>
+        {/* Branding */}
+        <TouchableOpacity onPress={() => setFreePalestine(f => !f)} activeOpacity={0.7} style={styles.brandingTouchable}>
+          {freePalestine ? (
+            <Text style={styles.branding}>🇵🇸 free palestine</Text>
+          ) : (
+            <Text style={styles.branding}>{GLOBE_FRAMES[globeFrame]} capitillian</Text>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Mode dropdown modal */}
       <Modal visible={showModeDropdown} transparent animationType="fade">
@@ -1384,7 +1407,7 @@ const styles = StyleSheet.create({
   // Overlays
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,255,255,0.97)",
+    backgroundColor: "rgba(255,255,255,0.82)",
     padding: 16,
   },
   endScroll: {

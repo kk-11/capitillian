@@ -96,17 +96,20 @@ for (var _k in A2N) N2A[A2N[_k]] = _k;
 
 var countriesGeo = null;
 var hlFeature = null, hlAlpha = 0, hlExtrusion = 0;
+var pendingHlCode = null;
 
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
   .then(function(r) { return r.json(); })
   .then(function(world) {
     if (typeof topojson !== 'undefined') {
       countriesGeo = topojson.feature(world, world.objects.countries).features;
+      if (pendingHlCode) setHighlight(pendingHlCode);
     }
   })
   .catch(function() {});
 
 window.setHighlight = function(code) {
+  pendingHlCode = code;
   hlAlpha = 0; hlExtrusion = 0;
   if (!code || !countriesGeo) { hlFeature = null; return; }
   var num = A2N[code];
@@ -485,6 +488,14 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
     webviewRef.current?.injectJavaScript(`setHighlight(${JSON.stringify(code)}); true;`);
   }, [highlightCode]);
 
+  const handleLoadEnd = () => {
+    if (targetLat !== undefined && targetLng !== undefined) {
+      webviewRef.current?.injectJavaScript(`setTarget(${targetLat}, ${targetLng}); true;`);
+    }
+    const code = highlightCode ?? null;
+    webviewRef.current?.injectJavaScript(`setHighlight(${JSON.stringify(code)}); true;`);
+  };
+
   const handleMessage = (e: { nativeEvent: { data: string } }) => {
     try {
       const msg = JSON.parse(e.nativeEvent.data);
@@ -502,6 +513,7 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
         ref={webviewRef}
         style={styles.webview}
         source={{ html: HTML }}
+        onLoadEnd={handleLoadEnd}
         scrollEnabled={false}
         bounces={false}
         overScrollMode="never"
