@@ -20,7 +20,6 @@ import { useFaceSelector } from "../game/useFaceSelector";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGameEngine, ROUND_SECONDS, BOARD_SIZE, type PersistedGameState } from "../game/useGameEngine";
 import { useDailyLimit, DAILY_PLAY_LIMIT, KEY_PLAYED, parsePlayed } from "../hooks/useDailyLimit";
-import { usePerfectStreak } from "../hooks/usePerfectStreak";
 import { useBadgeProgress } from "../hooks/useBadgeProgress";
 import FaceHeader from "../components/FaceHeader";
 import GameCard from "../components/GameCard";
@@ -65,7 +64,7 @@ const BADGE_GROUPS: Array<{
   tiers: Array<{ icon: string; name: string; req: number; legendary?: boolean }>;
 }> = [
   {
-    mode: "all", label: "World", emoji: "🌍",
+    mode: "all", label: "World", emoji: "🌍",          // 197
     tiers: [
       { icon: "🥉", name: "Explorer",   req: 1   },
       { icon: "🥈", name: "Scholar",    req: 10  },
@@ -74,7 +73,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "africa", label: "Africa", emoji: "🌍",
+    mode: "eurasia", label: "Eurasia", emoji: "🌐",    // 94
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -82,7 +81,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "asia", label: "Asia", emoji: "🌏",
+    mode: "africa", label: "Africa", emoji: "🌍",      // 54
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -90,7 +89,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "europe", label: "Europe", emoji: "⚜️",
+    mode: "asia", label: "Asia", emoji: "🌏",          // 49
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -98,7 +97,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "eurasia", label: "Eurasia", emoji: "🌐",
+    mode: "island", label: "Island Nations", emoji: "🏝️", // 46
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -106,7 +105,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "north america", label: "N. America", emoji: "🌎",
+    mode: "europe", label: "Europe", emoji: "⚜️",      // 45
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -114,7 +113,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "south america", label: "S. America", emoji: "🌎",
+    mode: "landlocked", label: "Landlocked", emoji: "🏔️", // 44
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -122,7 +121,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "oceania", label: "Oceania", emoji: "🏝️",
+    mode: "north america", label: "N. America", emoji: "🌎", // 23
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -130,7 +129,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "caribbean", label: "Caribbean", emoji: "🏖️",
+    mode: "oceania", label: "Oceania", emoji: "🏝️",    // 14
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -138,7 +137,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "landlocked", label: "Landlocked", emoji: "🏔️",
+    mode: "caribbean", label: "Caribbean", emoji: "🏖️", // 13
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -146,7 +145,7 @@ const BADGE_GROUPS: Array<{
     ],
   },
   {
-    mode: "island", label: "Island Nations", emoji: "🏝️",
+    mode: "south america", label: "S. America", emoji: "🌎", // 12
     tiers: [
       { icon: "🥉", name: "Explorer", req: 1  },
       { icon: "🥈", name: "Scholar",  req: 5  },
@@ -165,7 +164,6 @@ export default function GameScreen() {
   const { left, right, cycleLeft, cycleRight } = useFaceSelector(isPremium);
   const { state, startGame, restoreGame, selectCard } = useGameEngine();
   const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
-  const { streak: perfectStreak, recordResult: recordStreakResult } = usePerfectStreak();
   const { easyCounts, hcCounts, incrementEasy, incrementHc } = useBadgeProgress();
   const [gameMode, setGameMode] = useState<GameMode>("all");
   const [showModeDropdown, setShowModeDropdown] = useState(false);
@@ -278,17 +276,11 @@ export default function GameScreen() {
     }
   }, [status]);
 
-  // Record daily play + perfect streak when a non-practice game ends.
+  // Record daily play when a non-practice game ends.
   useEffect(() => {
     const ended = state.status === "won" || state.status === "timeout";
-    if (ended && !state.countUp && !recordedRef.current) {
-      // practice games have no timer and no countUp — exclude them via hasTimer
-    }
     if (ended && !recordedRef.current) {
       recordedRef.current = true;
-      if (state.hasTimer) {
-        recordStreakResult(state.wrongGuesses);
-      }
       if (!isPremium && state.hasTimer) {
         setGameEndedAsFree(true);
         recordPlay();
@@ -577,23 +569,6 @@ export default function GameScreen() {
                   <Text style={styles.endTitle}>Come back tomorrow!</Text>
                 )}
 
-                {/* Streak banner */}
-                {status === "won" && wrongGuesses === 0 && perfectStreak > 0 && (
-                  <View style={styles.streakBanner}>
-                    <Text style={styles.streakFire}>🔥</Text>
-                    <Text style={styles.streakCount}>{perfectStreak}</Text>
-                    <Text style={styles.streakLabel}>
-                      {perfectStreak === 1 ? "day perfect" : "day streak"}
-                    </Text>
-                  </View>
-                )}
-                {status === "won" && wrongGuesses > 0 && perfectStreak === 0 && (
-                  <View style={[styles.streakBanner, styles.streakBannerBroken]}>
-                    <Text style={styles.streakFire}>💀</Text>
-                    <Text style={styles.streakLabel}>streak broken</Text>
-                  </View>
-                )}
-
                 {status !== "idle" && (
                   <View style={styles.statsBlock}>
                     <View style={styles.statRow}>
@@ -842,12 +817,12 @@ export default function GameScreen() {
             >
               {[...BADGE_GROUPS]
                 .sort((a, b) => REGIONS[b.mode].length - REGIONS[a.mode].length)
-                .map(({ mode, label, emoji, tiers }) => {
+                .map(({ mode, label, emoji, tiers }, idx) => {
                 const easyCount = easyCounts[mode] ?? 0;
                 const hcCount = hcCounts[mode] ?? 0;
                 return (
                   <View key={mode} style={styles.badgeGroup}>
-                    <Text style={styles.continentHeader}>{emoji} {label} · {REGIONS[mode].length}</Text>
+                    <Text style={[styles.continentHeader, idx === 0 && styles.continentHeaderFirst]}>{emoji} {label} · {REGIONS[mode].length}</Text>
                     {tiers.map(({ icon, name, req, legendary }) => {
                       const { hcUnlocked, easyUnlocked, awakened, showHc, displayCount, progress } =
                         badgeTierState(easyCount, hcCount, { req, legendary }, tiers);
@@ -1122,10 +1097,19 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1.5,
     textTransform: "uppercase",
-    color: colors.textSecondary,
+    color: "#ffffff",
     marginTop: 20,
     marginBottom: 6,
     paddingHorizontal: 4,
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  continentHeaderFirst: {
+    color: colors.textSecondary,
+    textShadowColor: "rgba(255,255,255,0.95)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   countryRow: {
     backgroundColor: colors.surface,
@@ -1451,36 +1435,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.textPrimary,
     textAlign: "center",
-  },
-  streakBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#FFF8E1",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: "100%",
-  },
-  streakBannerBroken: {
-    backgroundColor: "#FFEBEE",
-  },
-  streakFire: {
-    fontSize: 28,
-  },
-  streakCount: {
-    fontSize: 36,
-    fontWeight: "900",
-    color: "#E65100",
-    lineHeight: 40,
-  },
-  streakLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4E6D8C",
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   statsBlock: {
     width: "100%",
