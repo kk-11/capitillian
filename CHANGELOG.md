@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/kk-11/capitillian/compare/v1.9.0...v1.10.0) (2026-05-12)
+
+
+### Features
+
+* vignette fade-out on easy, pill toggle, header polish ([a9b4105](https://github.com/kk-11/capitillian/commit/a9b410586be994a6bca4d614bc0c254efbf64031))
+
 # [1.9.0](https://github.com/kk-11/capitillian/compare/v1.8.0...v1.9.0) (2026-05-12)
 
 
