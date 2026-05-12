@@ -38,7 +38,7 @@ import { useSounds } from "../hooks/useSounds";
 // ---------------------------------------------------------------------------
 
 function CardSkeleton() {
-  return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(210,200,190,0.6)", borderWidth: 1, borderColor: "rgba(45,37,32,0.08)", marginBottom: 6 }} />;
+  return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(200,221,240,0.6)", borderWidth: 1, borderColor: "rgba(21,101,192,0.1)", marginBottom: 6 }} />;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -535,6 +535,7 @@ export default function GameScreen() {
                       onPress={() => handleCardPress("right", i)}
                       disabled={isDisabled || pendingMatched.includes(card.code)}
                       index={i}
+                      columnOffset={60}
                     />
                   ))}
                   {Array.from({ length: Math.max(0, BOARD_SIZE - rightCards.length) }).map((_, i) => (
@@ -1060,10 +1061,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(45,37,32,0.28)",
+    backgroundColor: "rgba(21,101,192,0.25)",
   },
   dotActive: {
-    backgroundColor: "rgba(45,37,32,0.82)",
+    backgroundColor: "rgba(21,101,192,0.85)",
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -1184,7 +1185,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: 16,
     right: 16,
-    backgroundColor: "rgba(245,240,235,0.96)",
+    backgroundColor: "rgba(240,247,255,0.96)",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1194,7 +1195,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 6,
     borderTopWidth: 1,
-    borderTopColor: "rgba(45,37,32,0.12)",
+    borderTopColor: "rgba(21,101,192,0.12)",
     paddingTop: 12,
   },
   globePanelRow: {
@@ -1285,7 +1286,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     letterSpacing: 1.2,
-    color: "rgba(30,25,20,0.45)",
+    color: "rgba(13,17,23,0.4)",
   },
   controlsLocked: {
     opacity: 0.35,
@@ -1301,7 +1302,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   hardcoreLabelActive: {
-    color: "#cc2222",
+    color: "#E53935",
   },
   hardcoreDots: {
     flexDirection: "row",
@@ -1383,7 +1384,7 @@ const styles = StyleSheet.create({
   // Overlays
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(245,240,235,0.97)",
+    backgroundColor: "rgba(255,255,255,0.97)",
     padding: 16,
   },
   endScroll: {
@@ -1427,14 +1428,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#fff3cc",
+    backgroundColor: "#FFF8E1",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
     width: "100%",
   },
   streakBannerBroken: {
-    backgroundColor: "#ffe0e0",
+    backgroundColor: "#FFEBEE",
   },
   streakFire: {
     fontSize: 28,
@@ -1442,13 +1443,13 @@ const styles = StyleSheet.create({
   streakCount: {
     fontSize: 36,
     fontWeight: "900",
-    color: "#a07800",
+    color: "#E65100",
     lineHeight: 40,
   },
   streakLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#8a7a6e",
+    color: "#4E6D8C",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -1509,14 +1510,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: "center",
-    backgroundColor: "#ede8f8",
+    backgroundColor: "#E8F1FB",
     borderWidth: 1,
-    borderColor: "#c8c0e8",
+    borderColor: "#90BAD4",
   },
   upgradeText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#5848b0",
+    color: "#1565C0",
     letterSpacing: 0.3,
   },
   wrongSection: {
@@ -1624,7 +1625,7 @@ const styles = StyleSheet.create({
   },
   badgeRowUnlocked: {
     opacity: 1,
-    borderColor: "rgba(45,37,32,0.12)",
+    borderColor: "rgba(21,101,192,0.18)",
   },
   badgeRowLegendary: {
     borderColor: "rgba(180,140,0,0.45)",
@@ -1668,13 +1669,13 @@ const styles = StyleSheet.create({
   },
   badgeBarBg: {
     height: 3,
-    backgroundColor: "rgba(45,37,32,0.12)",
+    backgroundColor: "rgba(21,101,192,0.12)",
     borderRadius: 2,
     overflow: "hidden",
   },
   badgeBarFill: {
     height: 3,
-    backgroundColor: "rgba(45,37,32,0.3)",
+    backgroundColor: "rgba(21,101,192,0.55)",
     borderRadius: 2,
   },
   badgeBarLegendary: {

@@ -20,7 +20,7 @@ const HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
   *{margin:0;padding:0}
-  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a}
+  html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF}
   canvas{display:block;image-rendering:auto}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -290,22 +290,35 @@ function draw() {
       const ny_s = -dy / effR;
       const nzSq = 1 - nx * nx - ny_s * ny_s;
       const i = (py * cw + px) * 4;
-      if (nzSq < 0) { pix[i]=6; pix[i+1]=6; pix[i+2]=12; pix[i+3]=255; continue; }
+      if (nzSq < 0) { pix[i]=130; pix[i+1]=190; pix[i+2]=230; pix[i+3]=255; continue; }
       const nz_s = Math.sqrt(nzSq);
       const ny = ny_s * cosT - nz_s * sinT;
       const nz = ny_s * sinT + nz_s * cosT;
       let cr, cg, cb;
+      // Stepped cel-shade lighting (4 bands)
+      const rawLight = nx*LX + ny*LY + nz*LZ;
+      const light = rawLight < -0.05 ? 0.18 : rawLight < 0.25 ? 0.48 : rawLight < 0.62 ? 0.76 : 1.0;
       if (texPx) {
         const lat = Math.asin(Math.max(-1, Math.min(1, ny)));
         const lon = Math.atan2(nx, nz) - currentLon;
         const tx  = ((lon / (Math.PI * 2) + 0.5) % 1 + 1) % 1;
         const ty  = 0.5 - lat / Math.PI;
         const ti  = (Math.min(texH-1, ty*texH|0) * texW + Math.min(texW-1, tx*texW|0)) * 4;
-        const light = 0.12 + Math.max(0, nx*LX + ny*LY + nz*LZ) * 0.88;
-        cr = texPx[ti]*light; cg = texPx[ti+1]*light; cb = texPx[ti+2]*light;
+        const r0 = texPx[ti], g0 = texPx[ti+1], b0 = texPx[ti+2];
+        // Classify biome from photo texture, apply flat brand colors
+        const isOcean   = b0 > r0 + 18 && b0 > g0 + 8;
+        const isSnow    = r0 > 205 && g0 > 205 && b0 > 205;
+        const isDesert  = !isOcean && r0 > 155 && g0 > 115 && b0 < 88;
+        const isMtnRock = !isOcean && !isDesert && !isSnow && r0 > 105 && g0 > 90 && b0 > 72 && b0 > r0 - 32;
+        let br, bg, bb;
+        if      (isSnow)    { br=242; bg=248; bb=255; }
+        else if (isOcean)   { br=21;  bg=101; bb=192; } // brand blue
+        else if (isDesert)  { br=214; bg=170; bb=88;  } // warm sand
+        else if (isMtnRock) { br=155; bg=138; bb=108; } // stone
+        else                { br=72;  bg=158; bb=75;  } // brand green land
+        cr = br * light; cg = bg * light; cb = bb * light;
       } else {
-        const light = 0.2 + Math.max(0, nx*LX + ny*LY + nz*LZ) * 0.8;
-        cr=20*light; cg=70*light; cb=150*light;
+        cr=21*light; cg=101*light; cb=192*light;
       }
       pix[i]=cr<255?cr:255; pix[i+1]=cg<255?cg:255; pix[i+2]=cb<255?cb:255; pix[i+3]=255;
     }
@@ -313,18 +326,48 @@ function draw() {
 
   ctx.putImageData(imgData, 0, 0);
 
+  // Country borders
+  drawBorders();
+
   // Country polygon highlight
   drawHighlight();
 
   // Atmosphere glow
-  const atmo = ctx.createRadialGradient(cx, cy, effR*0.88, cx, cy, effR*1.18);
-  atmo.addColorStop(0,   'rgba(40,110,230,0.18)');
-  atmo.addColorStop(0.5, 'rgba(30,80,200,0.08)');
-  atmo.addColorStop(1,   'rgba(20,60,180,0)');
+  const atmo = ctx.createRadialGradient(cx, cy, effR*0.88, cx, cy, effR*1.22);
+  atmo.addColorStop(0,   'rgba(100,180,255,0.22)');
+  atmo.addColorStop(0.5, 'rgba(60,140,230,0.10)');
+  atmo.addColorStop(1,   'rgba(30,100,200,0)');
   ctx.beginPath();
-  ctx.arc(cx, cy, effR*1.18, 0, Math.PI*2);
+  ctx.arc(cx, cy, effR*1.22, 0, Math.PI*2);
   ctx.fillStyle = atmo;
   ctx.fill();
+}
+
+function drawBorders() {
+  if (!countriesGeo) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(20,50,100,0.55)';
+  ctx.lineWidth = 0.7;
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = 1;
+  for (var ci = 0; ci < countriesGeo.length; ci++) {
+    var geom = countriesGeo[ci].geometry;
+    if (!geom) continue;
+    var polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+    for (var pi = 0; pi < polys.length; pi++) {
+      var ring = polys[pi][0];
+      ctx.beginPath();
+      var started = false;
+      for (var vi = 0; vi < ring.length; vi++) {
+        var pt = projectPt(ring[vi][1], ring[vi][0], 0);
+        if (!pt) { started = false; continue; }
+        if (!started) { ctx.moveTo(pt[0], pt[1]); started = true; }
+        else ctx.lineTo(pt[0], pt[1]);
+      }
+      if (started) ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 (function loop() { draw(); requestAnimationFrame(loop); })();
@@ -417,15 +460,19 @@ canvas.addEventListener('touchend', function(e) {
 
 export default function Globe({ targetLat, targetLng, interactive = false, onSwipeLeft, onSwipeRight, onGlobeTap, highlightCode }: GlobeProps) {
   const webviewRef = useRef<WebView>(null);
-  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0)).current;
 
-  const handleLoadEnd = () => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  };
+  useEffect(() => {
+    const t = setTimeout(() => {
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }).start();
+    }, 1600);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (targetLat !== undefined && targetLng !== undefined) {
@@ -450,24 +497,21 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
   };
 
   return (
-    <View style={styles.container} pointerEvents={interactive ? "auto" : "none"}>
-      <Animated.View style={[styles.container, { opacity }]}>
-        <WebView
-          ref={webviewRef}
-          style={styles.webview}
-          source={{ html: HTML }}
-          scrollEnabled={false}
-          bounces={false}
-          overScrollMode="never"
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          originWhitelist={["*"]}
-          javaScriptEnabled
-          onMessage={handleMessage}
-          onLoadEnd={handleLoadEnd}
-        />
-      </Animated.View>
-    </View>
+    <Animated.View style={[styles.container, { transform: [{ scale }] }]} pointerEvents={interactive ? "auto" : "none"}>
+      <WebView
+        ref={webviewRef}
+        style={styles.webview}
+        source={{ html: HTML }}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        originWhitelist={["*"]}
+        javaScriptEnabled
+        onMessage={handleMessage}
+      />
+    </Animated.View>
   );
 }
 
@@ -477,6 +521,6 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#FFFFFF",
   },
 });

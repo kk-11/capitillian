@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { colors } from "../theme/colors";
 
 // ---------------------------------------------------------------------------
 // Feature list
@@ -85,11 +84,11 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    backgroundColor: "#111418",
+    backgroundColor: "#0A1628",
     borderRadius: 20,
     padding: 28,
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "#1565C0",
     gap: 16,
     alignItems: "center",
   },
@@ -97,26 +96,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1.8,
-    color: colors.textSecondary,
+    color: "rgba(255,255,255,0.5)",
     textAlign: "center",
   },
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: colors.textPrimary,
+    color: "#FFFFFF",
     textAlign: "center",
     marginTop: -4,
   },
   price: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: "rgba(255,255,255,0.6)",
     textAlign: "center",
     marginTop: -8,
   },
   divider: {
     width: "100%",
     height: 1,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   features: {
     width: "100%",
@@ -129,19 +128,19 @@ const styles = StyleSheet.create({
   },
   featureIcon: {
     fontSize: 18,
-    color: colors.primary,
+    color: "#42A8E8",
     width: 24,
     textAlign: "center",
   },
   featureLabel: {
     flex: 1,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: "rgba(255,255,255,0.9)",
     lineHeight: 21,
   },
   buyButton: {
     width: "100%",
-    backgroundColor: colors.primary,
+    backgroundColor: "#E53935",
     borderRadius: 14,
     paddingVertical: 17,
     alignItems: "center",
@@ -149,21 +148,20 @@ const styles = StyleSheet.create({
   buyText: {
     fontSize: 17,
     fontWeight: "700",
-    color: colors.background,
+    color: "#FFFFFF",
   },
   dismissButton: {
     paddingVertical: 4,
   },
   dismissText: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: "rgba(255,255,255,0.45)",
   },
   restoreButton: {
     paddingVertical: 4,
   },
   restoreText: {
     fontSize: 12,
-    color: colors.textSecondary,
-    opacity: 0.5,
+    color: "rgba(255,255,255,0.3)",
   },
 });

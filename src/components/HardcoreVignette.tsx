@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { StyleSheet, View, Animated } from "react-native";
 import WebView from "react-native-webview";
 
 const HTML = `<!DOCTYPE html>
@@ -30,8 +30,21 @@ const HTML = `<!DOCTYPE html>
 </html>`;
 
 export default function HardcoreVignette() {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }, 2400);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <View style={styles.container} pointerEvents="none">
+    <Animated.View style={[styles.container, { opacity }]} pointerEvents="none">
       <WebView
         style={styles.webview}
         source={{ html: HTML }}
@@ -41,7 +54,7 @@ export default function HardcoreVignette() {
         originWhitelist={["*"]}
         javaScriptEnabled={false}
       />
-    </View>
+    </Animated.View>
   );
 }
 

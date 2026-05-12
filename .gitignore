@@ -42,3 +42,6 @@ yarn-error.*
 supabase/.temp/
 
 .env.local
+
+# local ideation
+esotericlocations.md

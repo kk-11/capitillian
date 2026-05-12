@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from "react";
-import { TouchableOpacity, Text, View, StyleSheet, Animated } from "react-native";
+import { TouchableOpacity, Text, View, StyleSheet, Animated, Platform } from "react-native";
 import { type CardFace, CARD_FACES, FACE_LABELS } from "../game/types";
 import { colors } from "../theme/colors";
+
+const isTablet = Platform.isPad;
 
 interface FaceHeaderProps {
   face: CardFace;
@@ -45,11 +47,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 19,
+    fontWeight: "700",
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: colors.textSecondary,
+    color: isTablet ? "#FFFFFF" : colors.textPrimary,
+    ...(isTablet ? {
+      textShadowColor: "rgba(0,0,0,0.5)",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+    } : {}),
   },
   dots: {
     flexDirection: "row",
@@ -59,9 +66,9 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.border,
+    backgroundColor: isTablet ? "rgba(255,255,255,0.45)" : colors.border,
   },
   dotActive: {
-    backgroundColor: colors.textSecondary,
+    backgroundColor: isTablet ? "rgba(255,255,255,0.95)" : colors.textSecondary,
   },
 });

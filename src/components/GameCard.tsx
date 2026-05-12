@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import { colors } from "../theme/colors";
 
+let introPlayed = false;
+
 interface GameCardProps {
   value: string;
   face: "name" | "capital" | "flag";
@@ -18,6 +20,7 @@ interface GameCardProps {
   onPress: () => void;
   disabled?: boolean;
   index?: number;
+  columnOffset?: number;
 }
 
 export default function GameCard({
@@ -30,18 +33,23 @@ export default function GameCard({
   onPress,
   disabled = false,
   index = 0,
+  columnOffset = 0,
 }: GameCardProps) {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Waterfall fade in on mount
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 220,
-      delay: index * 55,
-      useNativeDriver: true,
-    }).start();
+    const baseDelay = introPlayed ? 0 : 2600;
+    const t = setTimeout(() => {
+      introPlayed = true;
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+    }, baseDelay + columnOffset + index * 120);
+    return () => clearTimeout(t);
   }, []);
 
   // Shake on wrong
@@ -79,10 +87,10 @@ export default function GameCard({
 
   return (
     <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateX: shakeAnim }],
-      }}
+      style={[
+        styles.cardWrapper,
+        { opacity: fadeAnim, transform: [{ translateX: shakeAnim }] },
+      ]}
     >
       <TouchableOpacity
         activeOpacity={0.75}
@@ -105,30 +113,34 @@ export default function GameCard({
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    opacity: 0,
+  },
   card: {
-    height: 56,
+    height: 62,
     borderRadius: 12,
-    backgroundColor: "rgba(237, 231, 224, 0.9)",
+    backgroundColor: "rgba(240, 247, 255, 0.9)",
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 6,
+    marginBottom: 22,
     overflow: "hidden",
   },
   cardSelected: {
-    backgroundColor: "#e0d8ce",
-    borderColor: colors.primary,
+    backgroundColor: "#B8D4EE",
+    borderColor: "#42A8E8",
+    borderWidth: 2.5,
   },
   cardWrong: {
-    backgroundColor: "#f5d8d8",
-    borderColor: "#cc5555",
+    backgroundColor: "#FFEBE8",
+    borderColor: "#E53935",
   },
   cardMatched: {
-    backgroundColor: "#d4ecd4",
-    borderColor: "#55aa66",
+    backgroundColor: "#E8F5E8",
+    borderColor: "#388E3C",
   },
   cardSettled: {
-    backgroundColor: "#e4ece2",
-    borderColor: "#b8ccb8",
+    backgroundColor: "#E8F5E8",
+    borderColor: "#A5C8A5",
     opacity: 0.55,
   },
   inner: {
@@ -143,6 +155,7 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontSize: 15,
+    fontWeight: "700",
     color: colors.textPrimary,
     textAlign: "center",
   },
