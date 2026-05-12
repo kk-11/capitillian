@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/kk-11/capitillian/compare/v1.8.0...v1.9.0) (2026-05-12)
+
+
+### Features
+
+* staggered intro animations, globe first-card focus, dev premium bypass ([e3c399e](https://github.com/kk-11/capitillian/commit/e3c399eab7d7e354ee3e0a898526b11fc753c033))
+
 # [1.8.0](https://github.com/kk-11/capitillian/compare/v1.7.2...v1.8.0) (2026-05-12)
 
 
