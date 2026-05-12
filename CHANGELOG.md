@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/kk-11/capitillian/compare/v1.7.2...v1.8.0) (2026-05-12)
+
+
+### Features
+
+* bright theme, cel-shaded globe, ([e7ca2c9](https://github.com/kk-11/capitillian/commit/e7ca2c9c37a5ef9fbdd6e80a47c8c6f61ce47b1a))
+
 ## [1.7.2](https://github.com/kk-11/capitillian/compare/v1.7.1...v1.7.2) (2026-05-07)
 
 
