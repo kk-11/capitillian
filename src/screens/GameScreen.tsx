@@ -465,7 +465,7 @@ export default function GameScreen() {
             </View>
             <View style={styles.topRight}>
               <TouchableOpacity
-                style={styles.hardcoreToggle}
+                style={[styles.hardcoreToggle, isHardcore && styles.hardcoreToggleActive]}
                 onPress={() => {
                   const next = !isHardcore;
                   setIsHardcore(next);
@@ -907,7 +907,7 @@ export default function GameScreen() {
         </View>
       </Animated.View>
 
-      {isHardcore && currentPage === 0 && <HardcoreVignette />}
+      <HardcoreVignette visible={isHardcore && currentPage === 0} />
 
       {/* ------------------------------------------------------------------ */}
       {/* Page dots + branding                                               */}
@@ -1285,7 +1285,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   modeLabel: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "600",
     color: colors.textSecondary,
     textDecorationLine: "underline",
@@ -1317,12 +1317,22 @@ const styles = StyleSheet.create({
   hardcoreToggle: {
     alignItems: "center",
     gap: 4,
+    backgroundColor: "rgba(21,101,192,0.07)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(21,101,192,0.12)",
   },
   hardcoreLabel: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 1,
     color: colors.textSecondary,
+  },
+  hardcoreToggleActive: {
+    backgroundColor: "rgba(229,57,53,0.08)",
+    borderColor: "rgba(229,57,53,0.18)",
   },
   hardcoreLabelActive: {
     color: "#E53935",

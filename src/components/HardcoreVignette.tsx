@@ -29,19 +29,16 @@ const HTML = `<!DOCTYPE html>
 <body><div class="vignette"></div></body>
 </html>`;
 
-export default function HardcoreVignette() {
+export default function HardcoreVignette({ visible }: { visible: boolean }) {
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
-    }, 2400);
-    return () => clearTimeout(t);
-  }, []);
+    Animated.timing(opacity, {
+      toValue: visible ? 1 : 0,
+      duration: 1200,
+      useNativeDriver: true,
+    }).start();
+  }, [visible]);
 
   return (
     <Animated.View style={[styles.container, { opacity }]} pointerEvents="none">
