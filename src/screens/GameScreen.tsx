@@ -841,11 +841,7 @@ export default function GameScreen() {
               showsVerticalScrollIndicator={false}
             >
               {[...BADGE_GROUPS]
-                .sort((a, b) => {
-                  if (a.mode === "all") return -1;
-                  if (b.mode === "all") return 1;
-                  return REGIONS[b.mode].length - REGIONS[a.mode].length;
-                })
+                .sort((a, b) => REGIONS[b.mode].length - REGIONS[a.mode].length)
                 .map(({ mode, label, emoji, tiers }) => {
                 const easyCount = easyCounts[mode] ?? 0;
                 const hcCount = hcCounts[mode] ?? 0;
