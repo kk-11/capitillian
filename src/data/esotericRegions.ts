@@ -1,0 +1,153 @@
+const REGIONS: { name: string; countries: string[] }[] = [
+  // Maritime / Coastal
+  { name: "The Adriatic",          countries: ["Croatia", "Italy", "Slovenia", "Bosnia and Herzegovina", "Montenegro", "Albania"] },
+  { name: "The Levant",            countries: ["Lebanon", "Syria", "Israel", "Palestine", "Jordan"] },
+  { name: "The Maghreb",           countries: ["Morocco", "Tunisia", "Libya", "Mauritania"] },
+  { name: "The Gulf",              countries: ["Saudi Arabia", "Kuwait", "Bahrain", "Qatar", "United Arab Emirates", "Oman", "Iran", "Iraq"] },
+  { name: "The Aegean",            countries: ["Greece", "Turkey"] },
+  { name: "The Bight of Benin",    countries: ["Nigeria", "Benin", "Togo", "Ghana", "Ivory Coast"] },
+  { name: "The Ligurian Coast",    countries: ["Italy", "France", "Monaco"] },
+  { name: "The Dalmatian Coast",   countries: ["Croatia", "Montenegro"] },
+  { name: "The Malabar Coast",     countries: ["India"] },
+  { name: "The Barbary Coast",     countries: ["Morocco", "Tunisia", "Libya"] },
+  { name: "The Swahili Coast",     countries: ["Kenya", "Tanzania", "Mozambique"] },
+  { name: "The Skeleton Coast",    countries: ["Namibia"] },
+  { name: "The Amalfi Coast",      countries: ["Italy"] },
+  { name: "The Lofoten",           countries: ["Norway"] },
+  { name: "The Cornish Coast",     countries: ["United Kingdom"] },
+  { name: "The Strait of Malacca", countries: ["Malaysia", "Singapore", "Indonesia"] },
+  { name: "The Bosporus",          countries: ["Turkey"] },
+
+  // Steppe / Interior
+  { name: "The Caucasus",          countries: ["Armenia", "Azerbaijan", "Georgia", "Russia"] },
+  { name: "The Pannonian Plain",   countries: ["Hungary", "Serbia", "Croatia", "Romania", "Slovakia", "Austria"] },
+  { name: "The Anatolian Plateau", countries: ["Turkey"] },
+  { name: "Central Asia",             countries: ["Kazakhstan", "Uzbekistan", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "Afghanistan"] },
+  { name: "The Eurasian Steppe",   countries: ["Russia", "Kazakhstan", "Ukraine", "Mongolia"] },
+  { name: "The Tibetan Plateau",   countries: ["China", "India", "Nepal", "Bhutan"] },
+  { name: "The Mongolian Steppe",  countries: ["Mongolia", "China", "Russia"] },
+  { name: "The Gobi",              countries: ["Mongolia", "China"] },
+  { name: "Manchuria",             countries: ["China", "Russia"] },
+  { name: "Bactria",               countries: ["Afghanistan", "Uzbekistan", "Tajikistan"] },
+  { name: "The Ferghana Valley",   countries: ["Uzbekistan", "Kyrgyzstan", "Tajikistan"] },
+  { name: "Xinjiang",              countries: ["China"] },
+  { name: "The Loess Plateau",     countries: ["China"] },
+  { name: "The Kazakh Steppe",     countries: ["Kazakhstan"] },
+  { name: "The Tarim Basin",       countries: ["China"] },
+
+  // Island Groups
+  { name: "The Azores",       countries: ["Portugal"] },
+  { name: "The Canaries",     countries: ["Spain"] },
+  { name: "Micronesia",       countries: ["Micronesia", "Marshall Islands", "Palau", "Kiribati"] },
+  { name: "Melanesia",        countries: ["Papua New Guinea", "Solomon Islands", "Vanuatu", "Fiji"] },
+  { name: "The Faroes",       countries: ["Denmark"] },
+  { name: "The Cyclades",     countries: ["Greece"] },
+  { name: "The Hebrides",     countries: ["United Kingdom"] },
+  { name: "The Orkneys",      countries: ["United Kingdom"] },
+  { name: "The Shetlands",    countries: ["United Kingdom"] },
+  { name: "The Balearics",    countries: ["Spain"] },
+  { name: "The Dodecanese",   countries: ["Greece"] },
+  { name: "The Aleutians",    countries: ["United States"] },
+  { name: "The Marquesas",    countries: ["France"] },
+  { name: "The Seychelles",   countries: ["Seychelles"] },
+  { name: "The Maldives",     countries: ["Maldives"] },
+
+  // Historical / Cultural
+  { name: "Mesopotamia",              countries: ["Iraq"] },
+  { name: "The Fertile Crescent",     countries: ["Iraq", "Syria", "Lebanon", "Israel", "Palestine", "Jordan", "Turkey"] },
+  { name: "The Silk Road",            countries: ["China", "Kazakhstan", "Uzbekistan", "Tajikistan", "Kyrgyzstan", "Turkmenistan", "Afghanistan", "Iran", "Turkey"] },
+  { name: "Rhodesia",                 countries: ["Zimbabwe", "Zambia"] },
+  { name: "The Raj",                  countries: ["India", "Pakistan", "Bangladesh", "Sri Lanka", "Myanmar"] },
+  { name: "The Hanseatic Coast",      countries: ["Germany", "Denmark", "Netherlands", "Norway", "Sweden", "Finland", "Estonia", "Latvia", "Lithuania", "Poland"] },
+  { name: "Transylvania",             countries: ["Romania"] },
+  { name: "Galicia",                  countries: ["Ukraine", "Poland", "Spain", "Portugal"] },
+  { name: "Al-Andalus",               countries: ["Spain", "Portugal", "Morocco"] },
+  { name: "Byzantium",                countries: ["Turkey", "Greece"] },
+  { name: "Carthage",                 countries: ["Tunisia"] },
+  { name: "Nubia",                    countries: ["Sudan", "Egypt"] },
+  { name: "Lusitania",                countries: ["Portugal"] },
+  { name: "Dacia",                    countries: ["Romania"] },
+  { name: "Illyria",                  countries: ["Albania", "Croatia", "Bosnia and Herzegovina", "Montenegro", "Serbia", "North Macedonia", "Kosovo"] },
+  { name: "Phrygia",                  countries: ["Turkey"] },
+  { name: "Parthia",                  countries: ["Iran", "Iraq"] },
+  { name: "The Ottoman Heartland",    countries: ["Turkey", "Greece", "Bulgaria"] },
+  { name: "Persia",                   countries: ["Iran"] },
+  { name: "The Baltics",              countries: ["Estonia", "Latvia", "Lithuania"] },
+
+  // Polar / Remote
+  { name: "The High Arctic",        countries: ["Russia", "Norway", "Canada", "Denmark"] },
+  { name: "Svalbard",               countries: ["Norway"] },
+  { name: "Patagonia",              countries: ["Argentina", "Chile"] },
+  { name: "Tierra del Fuego",       countries: ["Argentina", "Chile"] },
+  { name: "The Sub-Antarctic",      countries: ["South Africa", "New Zealand"] },
+  { name: "Franz Josef Land",       countries: ["Russia"] },
+  { name: "Novaya Zemlya",          countries: ["Russia"] },
+  { name: "Kerguelen",              countries: ["France"] },
+  { name: "The Antarctic Peninsula", countries: ["Argentina", "Chile", "United Kingdom"] },
+  { name: "Wrangel Island",         countries: ["Russia"] },
+  { name: "The Taymyr Peninsula",   countries: ["Russia"] },
+  { name: "The Beaufort Sea",       countries: ["Canada"] },
+  { name: "The McMurdo Sound",      countries: ["New Zealand", "United States"] },
+  { name: "The Lena Delta",         countries: ["Russia"] },
+  { name: "The Ob Basin",           countries: ["Russia"] },
+
+  // Ancient & Legendary Cities
+  { name: "Babylon",      countries: ["Iraq"] },
+  { name: "Constantinople", countries: ["Turkey"] },
+  { name: "Alexandria",   countries: ["Egypt"] },
+  { name: "Samarkand",    countries: ["Uzbekistan"] },
+  { name: "Persepolis",   countries: ["Iran"] },
+  { name: "Nineveh",      countries: ["Iraq"] },
+  { name: "Timbuktu",     countries: ["Mali"] },
+  { name: "Troy",         countries: ["Turkey"] },
+  { name: "Angkor",       countries: ["Cambodia"] },
+  { name: "Tenochtitlan", countries: ["Mexico"] },
+  { name: "Palmyra",      countries: ["Syria"] },
+  { name: "Ur",           countries: ["Iraq"] },
+  { name: "Thebes",       countries: ["Egypt"] },
+  { name: "Memphis",      countries: ["Egypt"] },
+
+  // Mythic / Lost
+  { name: "Atlantis",         countries: ["Greece", "Portugal", "Morocco"] },
+  { name: "Lemuria",          countries: ["India", "Madagascar", "Sri Lanka"] },
+  { name: "El Dorado",        countries: ["Colombia", "Venezuela", "Peru", "Ecuador"] },
+  { name: "Shambhala",        countries: ["China", "Nepal", "Bhutan", "India"] },
+  { name: "Arcadia",          countries: ["Greece"] },
+  { name: "Avalon",           countries: ["United Kingdom"] },
+  { name: "Hyperborea",       countries: ["Russia", "Norway", "Finland"] },
+  { name: "Thule",            countries: ["Iceland", "Norway", "Denmark"] },
+  { name: "Mu",               countries: ["Japan", "Philippines"] },
+  { name: "The Land of Punt", countries: ["Somalia", "Eritrea", "Djibouti", "Ethiopia"] },
+  { name: "Eden",             countries: ["Iraq", "Israel", "Jordan"] },
+
+  // Other
+  { name: "The Kalahari",  countries: ["Botswana", "Namibia", "South Africa"] },
+  { name: "Bechuanaland", countries: ["Botswana"] },
+  { name: "The Sahel",          countries: ["Mauritania", "Mali", "Niger", "Chad", "Sudan", "Senegal", "Burkina Faso", "Nigeria"] },
+  { name: "The Hindu Kush",     countries: ["Afghanistan", "Pakistan"] },
+  { name: "The Carpathians",    countries: ["Romania", "Ukraine", "Slovakia", "Poland", "Czech Republic"] },
+  { name: "The Balkans",        countries: ["Serbia", "Croatia", "Bosnia and Herzegovina", "Slovenia", "North Macedonia", "Montenegro", "Albania", "Bulgaria", "Romania", "Greece", "Kosovo"] },
+  { name: "The Deccan",         countries: ["India"] },
+  { name: "The Mekong Delta",   countries: ["Vietnam"] },
+  { name: "The Congo Basin",    countries: ["DR Congo", "Republic of the Congo", "Central African Republic", "Cameroon"] },
+  { name: "The Great Rift Valley", countries: ["Kenya", "Tanzania", "Uganda", "Rwanda", "Burundi", "Ethiopia", "Eritrea", "Djibouti"] },
+  { name: "The Indus Valley",   countries: ["Pakistan", "India"] },
+  { name: "The Orinoco Basin",  countries: ["Venezuela", "Colombia"] },
+  { name: "The Nile Delta",     countries: ["Egypt"] },
+  { name: "The Irrawaddy Delta", countries: ["Myanmar"] },
+  { name: "The Yangtze Delta",  countries: ["China"] },
+  { name: "The Nile Valley",    countries: ["Egypt", "Sudan"] },
+  { name: "Upper Volta", countries: ["Burkina Faso"] },
+];
+
+const lookup: Record<string, string[]> = {};
+for (const region of REGIONS) {
+  for (const country of region.countries) {
+    if (!lookup[country]) lookup[country] = [];
+    if (!lookup[country].includes(region.name)) {
+      lookup[country].push(region.name);
+    }
+  }
+}
+
+export const COUNTRY_PLACES: Record<string, string[]> = lookup;

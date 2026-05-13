@@ -70,6 +70,7 @@ beforeEach(() => {
 
 describe("PremiumProvider initialisation", () => {
   it("starts initializing=true, isPremium=false", () => {
+    mockGetCustomerInfo.mockImplementation(() => new Promise(() => {}));
     const { result } = renderHook(() => usePremium(), { wrapper });
     expect(result.current.initializing).toBe(true);
     expect(result.current.isPremium).toBe(false);

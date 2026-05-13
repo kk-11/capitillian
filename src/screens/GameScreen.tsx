@@ -27,6 +27,7 @@ import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
 import { getFaceValue, formatPopulation, formatArea, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
+import { COUNTRY_PLACES } from "../data/esotericRegions";
 import { badgeTierState } from "../utils/badgeTierState";
 import { colors } from "../theme/colors";
 import * as Haptics from "expo-haptics";
@@ -686,6 +687,12 @@ export default function GameScreen() {
                                 <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                                 <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                               </View>
+                              {(COUNTRY_PLACES[country.name] ?? []).length > 0 && (
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>📍  Places</Text>
+                                  <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[country.name] ?? []).join(", ")}</Text>
+                                </View>
+                              )}
                             </View>
                           )}
                         </TouchableOpacity>
@@ -794,6 +801,12 @@ export default function GameScreen() {
                                 <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                                 <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                               </View>
+                              {(COUNTRY_PLACES[country.name] ?? []).length > 0 && (
+                                <View style={styles.detailRow}>
+                                  <Text style={styles.detailLabel}>📍  Places</Text>
+                                  <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[country.name] ?? []).join(", ")}</Text>
+                                </View>
+                              )}
                             </View>
                           )}
                         </TouchableOpacity>
@@ -987,6 +1000,12 @@ export default function GameScreen() {
                 <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                 <Text style={styles.detailValue}>{globeCountry.island ? "Yes" : "No"}</Text>
               </View>
+              {(COUNTRY_PLACES[globeCountry.name] ?? []).length > 0 && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>📍  Places</Text>
+                  <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[globeCountry.name] ?? []).join(", ")}</Text>
+                </View>
+              )}
             </View>
           )}
         </TouchableOpacity>
