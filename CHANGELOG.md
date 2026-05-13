@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/kk-11/capitillian/compare/v1.10.0...v1.11.0) (2026-05-13)
+
+
+### Bug Fixes
+
+* use non-resolving promise in initial ([60b169f](https://github.com/kk-11/capitillian/commit/60b169fca01631de125562d3879da7a551edc45a))
+
+
+### Features
+
+* goals polish, remove streak, awards ordering and header styles ([118748c](https://github.com/kk-11/capitillian/commit/118748c99dbe0150afba1ce22c3c483f3029df02))
+
 # [1.10.0](https://github.com/kk-11/capitillian/compare/v1.9.0...v1.10.0) (2026-05-12)
 
 
