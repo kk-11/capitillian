@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/kk-11/capitillian/compare/v1.11.0...v1.11.1) (2026-05-21)
+
+
+### Bug Fixes
+
+* add zaire ([5d0165f](https://github.com/kk-11/capitillian/commit/5d0165fe1796eb52d335196b86f27a37c3118923))
+
 # [1.11.0](https://github.com/kk-11/capitillian/compare/v1.10.0...v1.11.0) (2026-05-13)
 
 
