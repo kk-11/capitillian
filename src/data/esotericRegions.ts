@@ -138,6 +138,7 @@ const REGIONS: { name: string; countries: string[] }[] = [
   { name: "The Yangtze Delta",  countries: ["China"] },
   { name: "The Nile Valley",    countries: ["Egypt", "Sudan"] },
   { name: "Upper Volta", countries: ["Burkina Faso"] },
+  { name: "Zaire", countries: ["Democratic Republic of the Congo"] },
 ];
 
 const lookup: Record<string, string[]> = {};
