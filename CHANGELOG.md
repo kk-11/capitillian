@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/kk-11/capitillian/compare/v1.12.0...v1.12.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* make mode dropdown items tappable on Android, increase hit area ([3160839](https://github.com/kk-11/capitillian/commit/316083960891e931dd4f23658c2a6f75e6d9263d))
+
 # [1.12.0](https://github.com/kk-11/capitillian/compare/v1.11.2...v1.12.0) (2026-06-16)
 
 
