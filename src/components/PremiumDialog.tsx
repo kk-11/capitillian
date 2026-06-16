@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import * as Sentry from "@sentry/react-native";
 
 // ---------------------------------------------------------------------------
 // Feature list
@@ -52,7 +53,14 @@ export default function PremiumDialog({ visible, onPurchase, onDismiss, onRestor
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.buyButton} onPress={onPurchase} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.buyButton}
+            onPress={() => {
+              Sentry.captureMessage("premium.unlock_tapped", "info");
+              onPurchase();
+            }}
+            activeOpacity={0.85}
+          >
             <Text style={styles.buyText}>Unlock for €5</Text>
           </TouchableOpacity>
 
@@ -60,7 +68,14 @@ export default function PremiumDialog({ visible, onPurchase, onDismiss, onRestor
             <Text style={styles.dismissText}>Maybe Later</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.restoreButton} onPress={onRestore} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={() => {
+              Sentry.captureMessage("premium.restore_tapped", "info");
+              onRestore();
+            }}
+            activeOpacity={0.7}
+          >
             <Text style={styles.restoreText}>Restore Purchase</Text>
           </TouchableOpacity>
 

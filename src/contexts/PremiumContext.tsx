@@ -18,16 +18,14 @@ type PremiumContextValue = {
 const PremiumContext = createContext<PremiumContextValue | undefined>(undefined);
 
 export function PremiumProvider({ children }: { children: React.ReactNode }) {
-  const [isPremium, setIsPremium] = useState(__DEV__);
+  const [isPremium, setIsPremium] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
   const checkPremium = (info: CustomerInfo) => {
-    if (__DEV__) return;
     setIsPremium(info.entitlements.active[ENTITLEMENT_ID] !== undefined);
   };
 
   useEffect(() => {
-    if (__DEV__) { setIsPremium(true); setInitializing(false); return; }
     Purchases.setLogLevel(LOG_LEVEL.ERROR);
     if (IS_EXPO_GO) {
       setInitializing(false);
@@ -37,7 +35,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
     Purchases.getCustomerInfo()
       .then(checkPremium)
-      .catch((e) => { Sentry.captureException(e, { extra: { context: "getCustomerInfo" } }); if (!__DEV__) setIsPremium(false); })
+      .catch((e) => { Sentry.captureException(e, { extra: { context: "getCustomerInfo" } }); setIsPremium(false); })
       .finally(() => setInitializing(false));
 
     Purchases.addCustomerInfoUpdateListener(checkPremium);

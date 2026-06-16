@@ -313,7 +313,6 @@ export function useGameEngine() {
         type: "START",
         shuffled,
         targetPairs: pool.length,
-        // targetPairs:  : (isPremium ? pool.length : PRACTICE_PAIRS)
         hasTimer: true,
         countUp: !isPractice,
         isHardcore: isHardcore && !isPractice,
