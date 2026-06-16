@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/kk-11/capitillian/compare/v1.11.1...v1.11.2) (2026-06-16)
+
+
+### Bug Fixes
+
+* procedural globe texture and android webview rendering ([fccd86a](https://github.com/kk-11/capitillian/commit/fccd86a80c93e786167f3cb3add39b65c7a4486e))
+
 ## [1.11.1](https://github.com/kk-11/capitillian/compare/v1.11.0...v1.11.1) (2026-05-21)
 
 
