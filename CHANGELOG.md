@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/kk-11/capitillian/compare/v1.11.2...v1.12.0) (2026-06-16)
+
+
+### Features
+
+* remove dev premium bypass, add sentry events for ([f728dc5](https://github.com/kk-11/capitillian/commit/f728dc5cb4c5b26b0b7746d90e318c0c7f4f7eaa))
+
 ## [1.11.2](https://github.com/kk-11/capitillian/compare/v1.11.1...v1.11.2) (2026-06-16)
 
 
