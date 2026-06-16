@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { StyleSheet, View, Animated } from "react-native";
 import WebView from "react-native-webview";
+import * as Sentry from "@sentry/react-native";
 
 type GlobeProps = {
   targetLat?: number;
@@ -23,40 +24,72 @@ const HTML = `<!DOCTYPE html>
   html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF}
   canvas{display:block;image-rendering:auto}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onerror="window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:'error',msg:'topojson_cdn_failed'}))"></script>
 </head>
 <body>
 <script>
-const W = window.innerWidth, H = window.innerHeight;
 const S = 1.0;
-const cw = Math.floor(W * S), ch = Math.floor(H * S);
+var cw = 0, ch = 0, cx = 0, cy = 0, R = 0, R2 = 0;
 
 const canvas = document.createElement('canvas');
-canvas.width = cw; canvas.height = ch;
-canvas.style.width = W + 'px';
-canvas.style.height = H + 'px';
 document.body.appendChild(canvas);
 const ctx = canvas.getContext('2d');
 
-const cx = cw / 2, cy = ch / 2;
-const R  = Math.min(cw, ch) * 0.44;
-const R2 = R * R;
+function setupCanvas() {
+  var W = window.innerWidth || document.documentElement.clientWidth || screen.width;
+  var H = window.innerHeight || document.documentElement.clientHeight || screen.height;
+  if (W < 10 || H < 10) { setTimeout(setupCanvas, 30); return; }
+  cw = Math.floor(W); ch = Math.floor(H);
+  canvas.width = cw; canvas.height = ch;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  cx = cw / 2; cy = ch / 2;
+  R  = Math.min(cw, ch) * 0.44;
+  R2 = R * R;
+  window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+    JSON.stringify({type:'debug', msg:'canvas_init', cw:cw, ch:ch})
+  );
+}
+setupCanvas();
 
 // ---------------------------------------------------------------------------
-// Texture
+// Texture — generated from polygon data, no network/CORS needed
 // ---------------------------------------------------------------------------
-let texPx = null, texW = 0, texH = 0;
-const img = new Image();
-img.crossOrigin = 'anonymous';
-img.onload = () => {
-  const tc = document.createElement('canvas');
-  tc.width = 1024; tc.height = 512;
-  const tctx = tc.getContext('2d');
-  tctx.drawImage(img, 0, 0, 1024, 512);
-  const d = tctx.getImageData(0, 0, 1024, 512);
-  texPx = d.data; texW = 1024; texH = 512;
-};
-img.src = 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Whole_world_-_land_and_oceans_12000.jpg';
+var texPx = null, texW = 0, texH = 0;
+
+function buildTextureFromGeo() {
+  var TW = 1024, TH = 512;
+  var tc = document.createElement('canvas');
+  tc.width = TW; tc.height = TH;
+  var tctx = tc.getContext('2d');
+
+  // Ocean base
+  tctx.fillStyle = '#1565C0';
+  tctx.fillRect(0, 0, TW, TH);
+
+  // Land polygons
+  for (var ci = 0; ci < countriesGeo.length; ci++) {
+    if (countriesGeo[ci].id == 10) continue; // Antarctica — renders as a wide band
+    var geom = countriesGeo[ci].geometry;
+    if (!geom) continue;
+    var polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+    for (var pi = 0; pi < polys.length; pi++) {
+      var ring = polys[pi][0];
+      tctx.beginPath();
+      for (var vi = 0; vi < ring.length; vi++) {
+        var rx = (ring[vi][0] + 180) / 360 * TW;
+        var ry = (90 - ring[vi][1]) / 180 * TH;
+        if (vi === 0) tctx.moveTo(rx, ry); else tctx.lineTo(rx, ry);
+      }
+      tctx.closePath();
+      tctx.fillStyle = '#489B4B';
+      tctx.fill();
+    }
+  }
+
+
+  var d = tctx.getImageData(0, 0, TW, TH);
+  texPx = d.data; texW = TW; texH = TH;
+}
 
 // ---------------------------------------------------------------------------
 // Country polygon data (world-atlas + topojson)
@@ -103,10 +136,19 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
   .then(function(world) {
     if (typeof topojson !== 'undefined') {
       countriesGeo = topojson.feature(world, world.objects.countries).features;
+      buildTextureFromGeo();
       if (pendingHlCode) setHighlight(pendingHlCode);
+    } else {
+      window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+        JSON.stringify({type:'error', msg:'topojson_undefined_on_fetch'})
+      );
     }
   })
-  .catch(function() {});
+  .catch(function(e) {
+    window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+      JSON.stringify({type:'error', msg:'world_atlas_fetch_failed', detail: String(e)})
+    );
+  });
 
 window.setHighlight = function(code) {
   pendingHlCode = code;
@@ -307,19 +349,7 @@ function draw() {
         const tx  = ((lon / (Math.PI * 2) + 0.5) % 1 + 1) % 1;
         const ty  = 0.5 - lat / Math.PI;
         const ti  = (Math.min(texH-1, ty*texH|0) * texW + Math.min(texW-1, tx*texW|0)) * 4;
-        const r0 = texPx[ti], g0 = texPx[ti+1], b0 = texPx[ti+2];
-        // Classify biome from photo texture, apply flat brand colors
-        const isOcean   = b0 > r0 + 18 && b0 > g0 + 8;
-        const isSnow    = r0 > 205 && g0 > 205 && b0 > 205;
-        const isDesert  = !isOcean && r0 > 155 && g0 > 115 && b0 < 88;
-        const isMtnRock = !isOcean && !isDesert && !isSnow && r0 > 105 && g0 > 90 && b0 > 72 && b0 > r0 - 32;
-        let br, bg, bb;
-        if      (isSnow)    { br=242; bg=248; bb=255; }
-        else if (isOcean)   { br=21;  bg=101; bb=192; } // brand blue
-        else if (isDesert)  { br=214; bg=170; bb=88;  } // warm sand
-        else if (isMtnRock) { br=155; bg=138; bb=108; } // stone
-        else                { br=72;  bg=158; bb=75;  } // brand green land
-        cr = br * light; cg = bg * light; cb = bb * light;
+        cr = texPx[ti] * light; cg = texPx[ti+1] * light; cb = texPx[ti+2] * light;
       } else {
         cr=21*light; cg=101*light; cb=192*light;
       }
@@ -373,7 +403,8 @@ function drawBorders() {
   ctx.restore();
 }
 
-(function loop() { draw(); requestAnimationFrame(loop); })();
+function startLoop() { (function loop() { if (cw > 0) draw(); requestAnimationFrame(loop); })(); }
+startLoop();
 
 // ---------------------------------------------------------------------------
 // Touch interaction (drag to rotate, pinch to zoom)
@@ -463,19 +494,7 @@ canvas.addEventListener('touchend', function(e) {
 
 export default function Globe({ targetLat, targetLng, interactive = false, onSwipeLeft, onSwipeRight, onGlobeTap, highlightCode }: GlobeProps) {
   const webviewRef = useRef<WebView>(null);
-  const scale = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      Animated.spring(scale, {
-        toValue: 1,
-        friction: 6,
-        tension: 80,
-        useNativeDriver: true,
-      }).start();
-    }, 1600);
-    return () => clearTimeout(t);
-  }, []);
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (targetLat !== undefined && targetLng !== undefined) {
@@ -502,18 +521,35 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
       if (msg.type === "tap") onGlobeTap?.(msg.lat, msg.lon, msg.code);
       else if (msg.type === "swipeLeft") onSwipeLeft?.();
       else if (msg.type === "swipeRight") onSwipeRight?.();
+      else if (msg.type === "error") {
+        Sentry.captureMessage(`Globe: ${msg.msg}`, {
+          level: "error",
+          extra: { context: "globe_internal", ...msg },
+        });
+      } else if (msg.type === "debug") {
+        Sentry.captureMessage(`Globe debug: ${msg.msg}`, {
+          level: "info",
+          extra: msg,
+        });
+      }
     } catch {
       // non-JSON debug logs
     }
   };
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ scale }] }]} pointerEvents={interactive ? "auto" : "none"}>
+    <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
       <WebView
         ref={webviewRef}
         style={styles.webview}
-        source={{ html: HTML }}
+        source={{ html: HTML, baseUrl: "https://capitillian.app" }}
         onLoadEnd={handleLoadEnd}
+        onError={(e) => {
+          Sentry.captureException(
+            new Error(`Globe WebView error: ${e.nativeEvent.description}`),
+            { extra: { context: "globe_webview", url: e.nativeEvent.url, code: e.nativeEvent.code } }
+          );
+        }}
         scrollEnabled={false}
         bounces={false}
         overScrollMode="never"
@@ -523,6 +559,7 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
         javaScriptEnabled
         onMessage={handleMessage}
       />
+      {!interactive && <View style={StyleSheet.absoluteFillObject} />}
     </Animated.View>
   );
 }
