@@ -937,27 +937,25 @@ export default function GameScreen() {
       <Modal visible={showModeDropdown} transparent animationType="fade">
         <TouchableWithoutFeedback onPress={() => setShowModeDropdown(false)}>
           <View style={styles.dropdownBackdrop}>
-            <TouchableWithoutFeedback>
-              <View style={styles.dropdown}>
-                {(Object.keys(MODE_LABELS) as GameMode[]).map((mode) => (
-                  <TouchableOpacity
-                    key={mode}
-                    style={styles.dropdownRow}
-                    onPress={() => {
-                      setGameMode(mode);
-                      setShowModeDropdown(false);
-                      startGame(REGIONS[mode], isPremium, false, isHardcore);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.dropdownItem, mode === gameMode && styles.dropdownItemActive]}>
-                      {MODE_LABELS[mode]}
-                    </Text>
-                    {mode === gameMode && <Text style={styles.dropdownCheck}>✓</Text>}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </TouchableWithoutFeedback>
+            <View style={styles.dropdown}>
+              {(Object.keys(MODE_LABELS) as GameMode[]).map((mode) => (
+                <Pressable
+                  key={mode}
+                  style={styles.dropdownRow}
+                  hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+                  onPress={() => {
+                    setGameMode(mode);
+                    setShowModeDropdown(false);
+                    startGame(REGIONS[mode], isPremium, false, isHardcore);
+                  }}
+                >
+                  <Text style={[styles.dropdownItem, mode === gameMode && styles.dropdownItemActive]}>
+                    {MODE_LABELS[mode]}
+                  </Text>
+                  {mode === gameMode && <Text style={styles.dropdownCheck}>✓</Text>}
+                </Pressable>
+              ))}
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
