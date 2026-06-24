@@ -1,3 +1,11 @@
+# [1.13.0](https://github.com/kk-11/capitillian/compare/v1.12.1...v1.13.0) (2026-06-24)
+
+
+### Features
+
+* add name-length and flag-pattern game modes, default to 5-letters HC ([d388dbd](https://github.com/kk-11/capitillian/commit/d388dbd2ff7e144040d0cdf31e9f7b176619b207))
+* use satellite imagery texture on globe instead of procedural generation ([39d777d](https://github.com/kk-11/capitillian/commit/39d777df97d23ebcaef94042407292619b38100c))
+
 ## [1.12.1](https://github.com/kk-11/capitillian/compare/v1.12.0...v1.12.1) (2026-06-16)
 
 
