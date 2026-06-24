@@ -52,44 +52,20 @@ function setupCanvas() {
 setupCanvas();
 
 // ---------------------------------------------------------------------------
-// Texture — generated from polygon data, no network/CORS needed
+// Texture — photo loaded from Wikipedia
 // ---------------------------------------------------------------------------
 var texPx = null, texW = 0, texH = 0;
-
-function buildTextureFromGeo() {
-  var TW = 1024, TH = 512;
+var img = new Image();
+img.crossOrigin = 'anonymous';
+img.onload = function() {
   var tc = document.createElement('canvas');
-  tc.width = TW; tc.height = TH;
+  tc.width = 1024; tc.height = 512;
   var tctx = tc.getContext('2d');
-
-  // Ocean base
-  tctx.fillStyle = '#1565C0';
-  tctx.fillRect(0, 0, TW, TH);
-
-  // Land polygons
-  for (var ci = 0; ci < countriesGeo.length; ci++) {
-    if (countriesGeo[ci].id == 10) continue; // Antarctica — renders as a wide band
-    var geom = countriesGeo[ci].geometry;
-    if (!geom) continue;
-    var polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
-    for (var pi = 0; pi < polys.length; pi++) {
-      var ring = polys[pi][0];
-      tctx.beginPath();
-      for (var vi = 0; vi < ring.length; vi++) {
-        var rx = (ring[vi][0] + 180) / 360 * TW;
-        var ry = (90 - ring[vi][1]) / 180 * TH;
-        if (vi === 0) tctx.moveTo(rx, ry); else tctx.lineTo(rx, ry);
-      }
-      tctx.closePath();
-      tctx.fillStyle = '#489B4B';
-      tctx.fill();
-    }
-  }
-
-
-  var d = tctx.getImageData(0, 0, TW, TH);
-  texPx = d.data; texW = TW; texH = TH;
-}
+  tctx.drawImage(img, 0, 0, 1024, 512);
+  var d = tctx.getImageData(0, 0, 1024, 512);
+  texPx = d.data; texW = 1024; texH = 512;
+};
+img.src = 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Whole_world_-_land_and_oceans_12000.jpg';
 
 // ---------------------------------------------------------------------------
 // Country polygon data (world-atlas + topojson)
@@ -136,7 +112,6 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
   .then(function(world) {
     if (typeof topojson !== 'undefined') {
       countriesGeo = topojson.feature(world, world.objects.countries).features;
-      buildTextureFromGeo();
       if (pendingHlCode) setHighlight(pendingHlCode);
     } else {
       window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
@@ -349,7 +324,18 @@ function draw() {
         const tx  = ((lon / (Math.PI * 2) + 0.5) % 1 + 1) % 1;
         const ty  = 0.5 - lat / Math.PI;
         const ti  = (Math.min(texH-1, ty*texH|0) * texW + Math.min(texW-1, tx*texW|0)) * 4;
-        cr = texPx[ti] * light; cg = texPx[ti+1] * light; cb = texPx[ti+2] * light;
+        const r0 = texPx[ti], g0 = texPx[ti+1], b0 = texPx[ti+2];
+        const isOcean   = b0 > r0 + 18 && b0 > g0 + 8;
+        const isSnow    = r0 > 205 && g0 > 205 && b0 > 205;
+        const isDesert  = !isOcean && r0 > 155 && g0 > 115 && b0 < 88;
+        const isMtnRock = !isOcean && !isDesert && !isSnow && r0 > 105 && g0 > 90 && b0 > 72 && b0 > r0 - 32;
+        let br, bg, bb;
+        if      (isSnow)    { br=242; bg=248; bb=255; }
+        else if (isOcean)   { br=21;  bg=101; bb=192; }
+        else if (isDesert)  { br=214; bg=170; bb=88;  }
+        else if (isMtnRock) { br=155; bg=138; bb=108; }
+        else                { br=72;  bg=158; bb=75;  }
+        cr = br * light; cg = bg * light; cb = bb * light;
       } else {
         cr=21*light; cg=101*light; cb=192*light;
       }
