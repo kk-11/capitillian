@@ -153,6 +153,45 @@ const BADGE_GROUPS: Array<{
       { icon: "🥇", name: "Master",   req: 10 },
     ],
   },
+  {
+    mode: "6 letters", label: "6 Letters", emoji: "6️⃣",      // ~30
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "5 letters", label: "5 Letters", emoji: "5️⃣",      // 24
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1  },
+      { icon: "🥈", name: "Scholar",  req: 5  },
+      { icon: "🥇", name: "Master",   req: 10 },
+    ],
+  },
+  {
+    mode: "crescent", label: "Crescent", emoji: "🌙",         // 13
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1 },
+      { icon: "🥈", name: "Scholar",  req: 3 },
+      { icon: "🥇", name: "Master",   req: 5 },
+    ],
+  },
+  {
+    mode: "4 letters", label: "4 Letters", emoji: "4️⃣",      // 10
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1 },
+      { icon: "🥈", name: "Scholar",  req: 3 },
+      { icon: "🥇", name: "Master",   req: 5 },
+    ],
+  },
+  {
+    mode: "nordic cross", label: "Nordic Cross", emoji: "❄️", // 5
+    tiers: [
+      { icon: "🥉", name: "Explorer", req: 1 },
+      { icon: "🥇", name: "Master",   req: 5 },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -166,9 +205,9 @@ export default function GameScreen() {
   const { state, startGame, restoreGame, selectCard } = useGameEngine();
   const { playsToday, hasPlayedToday, hasPracticedToday, secondsLeft: countdownSecs, recordPlay, recordPractice } = useDailyLimit(isPremium);
   const { easyCounts, hcCounts, incrementEasy, incrementHc } = useBadgeProgress();
-  const [gameMode, setGameMode] = useState<GameMode>("all");
+  const [gameMode, setGameMode] = useState<GameMode>("5 letters");
   const [showModeDropdown, setShowModeDropdown] = useState(false);
-  const [isHardcore, setIsHardcore] = useState(false);
+  const [isHardcore, setIsHardcore] = useState(true);
   const [globeFrame, setGlobeFrame] = useState(0);
   const GLOBE_FRAMES = ["🌍", "🌎", "🌏"];
   useEffect(() => {

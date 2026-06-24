@@ -304,7 +304,12 @@ export type GameMode =
   | "south america"
   | "caribbean"
   | "landlocked"
-  | "island";
+  | "island"
+  | "4 letters"
+  | "5 letters"
+  | "6 letters"
+  | "nordic cross"
+  | "crescent";
 
 export const MODE_LABELS: Record<GameMode, string> = {
   all:             "World",
@@ -318,7 +323,15 @@ export const MODE_LABELS: Record<GameMode, string> = {
   caribbean:       "Caribbean",
   landlocked:      "Landlocked",
   island:          "Island",
+  "4 letters":     "4 Letters",
+  "5 letters":     "5 Letters",
+  "6 letters":     "6 Letters",
+  "nordic cross":  "Nordic Cross",
+  crescent:        "Crescent",
 };
+
+const NORDIC_CROSS_CODES = new Set(["DK","FI","IS","NO","SE"]);
+const CRESCENT_CODES = new Set(["DZ","AZ","KM","LY","MY","MV","MR","PK","SG","TN","TR","TM","UZ"]);
 
 export const REGIONS: Record<GameMode, Country[]> = {
   all:             COUNTRIES,
@@ -332,4 +345,9 @@ export const REGIONS: Record<GameMode, Country[]> = {
   caribbean:       NORTH_AMERICA.filter(c => CARIBBEAN_CODES.has(c.code)),
   landlocked:      COUNTRIES.filter(c => c.landlocked),
   island:          COUNTRIES.filter(c => c.island),
+  "4 letters":     COUNTRIES.filter(c => c.name.length === 4),
+  "5 letters":     COUNTRIES.filter(c => c.name.length === 5),
+  "6 letters":     COUNTRIES.filter(c => c.name.length === 6),
+  "nordic cross":  COUNTRIES.filter(c => NORDIC_CROSS_CODES.has(c.code)),
+  crescent:        COUNTRIES.filter(c => CRESCENT_CODES.has(c.code)),
 };
