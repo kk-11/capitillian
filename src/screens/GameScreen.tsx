@@ -26,6 +26,7 @@ import GameCard from "../components/GameCard";
 import Globe from "../components/Globe";
 import HardcoreVignette from "../components/HardcoreVignette";
 import PremiumDialog from "../components/PremiumDialog";
+import SpotlightOnboarding, { type SpotlightStep, type Rect } from "../components/SpotlightOnboarding";
 import { getFaceValue, formatPopulation, formatArea, REGIONS, MODE_LABELS, COUNTRIES, type GameMode, type Country } from "../data/countries";
 import { COUNTRY_PLACES } from "../data/esotericRegions";
 import { badgeTierState } from "../utils/badgeTierState";
@@ -39,6 +40,22 @@ import { useSounds } from "../hooks/useSounds";
 
 function CardSkeleton() {
   return <View style={{ height: 56, borderRadius: 12, backgroundColor: "rgba(200,221,240,0.6)", borderWidth: 1, borderColor: "rgba(21,101,192,0.1)", marginBottom: 6 }} />;
+}
+
+function PlacesRow({ places }: { places: string[] }) {
+  if (places.length === 0) return null;
+  return (
+    <View style={styles.placesRow}>
+      <Text style={styles.detailLabel}>📍  Places</Text>
+      <View style={styles.placesBadges}>
+        {places.map((place) => (
+          <View key={place} style={styles.placeBadge}>
+            <Text style={styles.placeBadgeText}>{place}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 function formatTime(totalSeconds: number): string {
@@ -238,8 +255,16 @@ export default function GameScreen() {
   const [gameEndedAsFree, setGameEndedAsFree] = useState(false);
   const recordedRef = useRef(false);
 
+  const [onboardingSteps, setOnboardingSteps] = useState<SpotlightStep[]>([]);
+  const [introSettled, setIntroSettled] = useState(false);
+  const hardcoreToggleRef = useRef<View>(null);
+  const leftHeaderRef = useRef<View>(null);
+  const rightHeaderRef = useRef<View>(null);
+  const pageDotsRef = useRef<View>(null);
+
   const PREFS_KEY = "@cap/prefs";
   const GAME_KEY  = "@cap/game";
+  const SPOTLIGHT_KEY = "@cap/seenSpotlight";
 
   // Load persisted prefs + game state on mount
   useEffect(() => {
@@ -282,6 +307,70 @@ export default function GameScreen() {
   useEffect(() => {
     AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ gameMode, isHardcore })).catch(() => {});
   }, [gameMode, isHardcore]);
+
+  // Spotlight onboarding — highlights the hardcore toggle and the column
+  // headers. Runs automatically once on first launch, and can be replayed
+  // anytime via the info button next to the timer.
+  const measureRect = (ref: React.RefObject<View | null>) =>
+    new Promise<Rect | null>((resolve) => {
+      if (!ref.current) return resolve(null);
+      ref.current.measureInWindow((x, y, width, height) => {
+        resolve(width > 0 && height > 0 ? { x, y, width, height } : null);
+      });
+    });
+
+  const showOnboarding = async () => {
+    const [hcRect, leftRect, rightRect, dotsRect] = await Promise.all([
+      measureRect(hardcoreToggleRef),
+      measureRect(leftHeaderRef),
+      measureRect(rightHeaderRef),
+      measureRect(pageDotsRef),
+    ]);
+    if (!hcRect || !leftRect || !rightRect || !dotsRect) return;
+
+    const columnsX = Math.min(leftRect.x, rightRect.x);
+    const columnsRect: Rect = {
+      x: columnsX,
+      y: Math.min(leftRect.y, rightRect.y),
+      width: rightRect.x + rightRect.width - columnsX,
+      height: Math.max(leftRect.height, rightRect.height),
+    };
+
+    setOnboardingSteps([
+      {
+        key: "hardcore",
+        title: "Easy or Hardcore",
+        body: "Hardcore hides the safety net — one wrong guess ends the round. Tap here anytime to switch.",
+        rect: hcRect,
+      },
+      {
+        key: "columns",
+        title: "Flip the categories",
+        body: "Tap either header to cycle between flags, country names, and capitals.",
+        rect: columnsRect,
+      },
+      {
+        key: "pages",
+        title: "There's more to explore",
+        body: "Swipe or tap the dots to reach the globe, browse every country, and check your achievements.",
+        rect: dotsRect,
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    if (!introSettled) return;
+    (async () => {
+      const seen = await AsyncStorage.getItem(SPOTLIGHT_KEY);
+      if (seen) return;
+      showOnboarding();
+    })();
+  }, [introSettled]);
+
+  const dismissOnboarding = () => {
+    setOnboardingSteps([]);
+    AsyncStorage.setItem(SPOTLIGHT_KEY, "1").catch(() => {});
+  };
 
   // Persist game state on every meaningful change
   useEffect(() => {
@@ -390,7 +479,7 @@ export default function GameScreen() {
       Animated.timing(headerSlide, { toValue: 0, duration: 1400, delay: 0, useNativeDriver: true }),
       Animated.timing(footerAnim, { toValue: 1, duration: 600, delay: 0, useNativeDriver: true }),
       Animated.timing(boardOpacity, { toValue: 1, duration: 600, delay: 510, useNativeDriver: true }),
-    ]).start();
+    ]).start(() => setIntroSettled(true));
   }, []);
 
   useEffect(() => {
@@ -507,24 +596,26 @@ export default function GameScreen() {
               )}
             </View>
             <View style={styles.topRight}>
-              <TouchableOpacity
-                style={[styles.hardcoreToggle, isHardcore && styles.hardcoreToggleActive]}
-                onPress={() => {
-                  const next = !isHardcore;
-                  setIsHardcore(next);
-                  startGame(REGIONS[gameMode], isPremium, false, next);
-                }}
-                activeOpacity={0.7}
-                disabled={status === "playing"}
-              >
-                <Text style={[styles.hardcoreLabel, isHardcore && styles.hardcoreLabelActive, status === "playing" && styles.controlsLocked]}>
-                  {isHardcore ? "💔 HARDCORE" : "EASY"}
-                </Text>
-                <View style={styles.hardcoreDots}>
-                  <View style={[styles.hardcoreDot, !isHardcore && styles.hardcoreDotActive]} />
-                  <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
-                </View>
-              </TouchableOpacity>
+              <View ref={hardcoreToggleRef} collapsable={false}>
+                <TouchableOpacity
+                  style={[styles.hardcoreToggle, isHardcore && styles.hardcoreToggleActive]}
+                  onPress={() => {
+                    const next = !isHardcore;
+                    setIsHardcore(next);
+                    startGame(REGIONS[gameMode], isPremium, false, next);
+                  }}
+                  activeOpacity={0.7}
+                  disabled={status === "playing"}
+                >
+                  <Text style={[styles.hardcoreLabel, isHardcore && styles.hardcoreLabelActive, status === "playing" && styles.controlsLocked]}>
+                    {isHardcore ? "💔 HARDCORE" : "EASY"}
+                  </Text>
+                  <View style={styles.hardcoreDots}>
+                    <View style={[styles.hardcoreDot, !isHardcore && styles.hardcoreDotActive]} />
+                    <View style={[styles.hardcoreDot,  isHardcore && styles.hardcoreDotActive]} />
+                  </View>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
                 onPress={() => setShowModeDropdown(true)}
                 activeOpacity={0.7}
@@ -558,7 +649,9 @@ export default function GameScreen() {
             >
               <View style={styles.cardsRow}>
                 <View style={styles.column}>
-                  <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
+                  <View ref={leftHeaderRef} collapsable={false}>
+                    <FaceHeader face={left} isPremium={isPremium} onPress={cycleLeft} />
+                  </View>
                   {leftCards.map((card, i) => (
                     <GameCard
                       key={`left-${roundId}-${card.code}`}
@@ -581,7 +674,9 @@ export default function GameScreen() {
                 <View style={styles.divider} />
 
                 <View style={styles.column}>
-                  <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
+                  <View ref={rightHeaderRef} collapsable={false}>
+                    <FaceHeader face={right} isPremium={isPremium} onPress={cycleRight} />
+                  </View>
                   {rightCards.map((card, i) => (
                     <GameCard
                       key={`right-${roundId}-${card.code}`}
@@ -737,12 +832,7 @@ export default function GameScreen() {
                                 <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                                 <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                               </View>
-                              {(COUNTRY_PLACES[country.name] ?? []).length > 0 && (
-                                <View style={styles.detailRow}>
-                                  <Text style={styles.detailLabel}>📍  Places</Text>
-                                  <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[country.name] ?? []).join(", ")}</Text>
-                                </View>
-                              )}
+                              <PlacesRow places={COUNTRY_PLACES[country.name] ?? []} />
                             </View>
                           )}
                         </TouchableOpacity>
@@ -753,6 +843,14 @@ export default function GameScreen() {
               </ScrollView>
             </View>
           )}
+
+          <Pressable
+            style={({ pressed }) => [styles.infoButton, pressed && { opacity: 0.6 }]}
+            onPress={showOnboarding}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.infoButtonText}>i</Text>
+          </Pressable>
           </SafeAreaView>
         </View>
 
@@ -857,12 +955,7 @@ export default function GameScreen() {
                           <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                           <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
                         </View>
-                        {(COUNTRY_PLACES[country.name] ?? []).length > 0 && (
-                          <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>📍  Places</Text>
-                            <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[country.name] ?? []).join(", ")}</Text>
-                          </View>
-                        )}
+                        <PlacesRow places={COUNTRY_PLACES[country.name] ?? []} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -955,8 +1048,12 @@ export default function GameScreen() {
       {/* ------------------------------------------------------------------ */}
       <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="box-none">
         <Pressable
+          ref={pageDotsRef}
           style={styles.dotsContainer}
-          onPress={() => goToPage((currentPage + 1) % 4)}
+          onPress={() => {
+            goToPage((currentPage + 1) % 4);
+            if (onboardingSteps.length > 0) dismissOnboarding();
+          }}
           hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
         >
           {[0, 1, 2, 3].map((i) => (
@@ -1050,16 +1147,17 @@ export default function GameScreen() {
                 <Text style={styles.detailLabel}>🏝️  Island nation</Text>
                 <Text style={styles.detailValue}>{globeCountry.island ? "Yes" : "No"}</Text>
               </View>
-              {(COUNTRY_PLACES[globeCountry.name] ?? []).length > 0 && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>📍  Places</Text>
-                  <Text style={[styles.detailValue, { flex: 1, textAlign: "right" }]}>{(COUNTRY_PLACES[globeCountry.name] ?? []).join(", ")}</Text>
-                </View>
-              )}
+              <PlacesRow places={COUNTRY_PLACES[globeCountry.name] ?? []} />
             </View>
           )}
         </Pressable>
       )}
+
+      <SpotlightOnboarding
+        visible={currentPage === 0 && onboardingSteps.length > 0}
+        steps={onboardingSteps}
+        onDone={dismissOnboarding}
+      />
 
       <PremiumDialog
         visible={showPremiumDialog}
@@ -1348,6 +1446,24 @@ const styles = StyleSheet.create({
   },
   timerRed: {
     color: colors.error,
+  },
+  infoButton: {
+    position: "absolute",
+    left: 20,
+    bottom: 24,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+  },
+  infoButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    lineHeight: 13,
   },
   topRight: {
     flexDirection: "row",
@@ -1659,6 +1775,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: colors.textPrimary,
+  },
+  placesRow: {
+    flexDirection: "column",
+    gap: 6,
+  },
+  placesBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  placeBadge: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  placeBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.primary,
   },
   // Goals page
   badgeRowHcShiny: {
