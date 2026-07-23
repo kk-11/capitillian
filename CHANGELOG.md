@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/kk-11/capitillian/compare/v1.13.0...v1.14.0) (2026-07-23)
+
+
+### Features
+
+* add spotlight onboarding for hardcore toggle, categories, and pages ([9984222](https://github.com/kk-11/capitillian/commit/9984222aa28f13669a0e9d14149afe3a52239f29))
+
 # [1.13.0](https://github.com/kk-11/capitillian/compare/v1.12.1...v1.13.0) (2026-06-24)
 
 
