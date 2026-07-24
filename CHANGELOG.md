@@ -1,3 +1,10 @@
+## [1.14.3](https://github.com/kk-11/capitillian/compare/v1.14.2...v1.14.3) (2026-07-24)
+
+
+### Reverts
+
+* Revert "chore: stop semantic-release from committing version bumps back to main" ([89f9770](https://github.com/kk-11/capitillian/commit/89f9770a1474fc0aa9ed9975a3a29335491bcf05))
+
 # [1.14.0](https://github.com/kk-11/capitillian/compare/v1.13.0...v1.14.0) (2026-07-23)
 
 
