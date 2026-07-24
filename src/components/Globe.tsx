@@ -502,24 +502,34 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
   };
 
   const handleMessage = (e: { nativeEvent: { data: string } }) => {
+    let msg: { type?: string; msg?: string; [key: string]: unknown };
     try {
-      const msg = JSON.parse(e.nativeEvent.data);
-      if (msg.type === "tap") onGlobeTap?.(msg.lat, msg.lon, msg.code);
-      else if (msg.type === "swipeLeft") onSwipeLeft?.();
-      else if (msg.type === "swipeRight") onSwipeRight?.();
-      else if (msg.type === "error") {
-        Sentry.captureMessage(`Globe: ${msg.msg}`, {
-          level: "error",
-          extra: { context: "globe_internal", ...msg },
-        });
-      } else if (msg.type === "debug") {
-        Sentry.captureMessage(`Globe debug: ${msg.msg}`, {
-          level: "info",
-          extra: msg,
-        });
-      }
+      msg = JSON.parse(e.nativeEvent.data);
     } catch {
-      // non-JSON debug logs
+      // WebView can emit non-JSON messages unrelated to our protocol; keep a
+      // breadcrumb so they show up as context on a real error without
+      // creating a Sentry event of their own.
+      Sentry.addBreadcrumb({
+        category: "globe",
+        message: "Non-JSON WebView message",
+        data: { data: e.nativeEvent.data },
+        level: "debug",
+      });
+      return;
+    }
+    if (msg.type === "tap") onGlobeTap?.(msg.lat as number, msg.lon as number, msg.code as string | null | undefined);
+    else if (msg.type === "swipeLeft") onSwipeLeft?.();
+    else if (msg.type === "swipeRight") onSwipeRight?.();
+    else if (msg.type === "error") {
+      Sentry.captureException(new Error(`Globe: ${msg.msg}`), {
+        extra: { context: "globe_internal", ...msg },
+        fingerprint: ["globe_internal", String(msg.msg)],
+      });
+    } else if (msg.type === "debug") {
+      Sentry.captureMessage(`Globe debug: ${msg.msg}`, {
+        level: "info",
+        extra: msg,
+      });
     }
   };
 
