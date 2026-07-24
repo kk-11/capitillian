@@ -626,6 +626,13 @@ export default function GameScreen() {
                 </Text>
               </TouchableOpacity>
               <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.infoButton, pressed && { opacity: 0.6 }]}
+                onPress={showOnboarding}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.infoButtonText}>i</Text>
+              </Pressable>
             </View>
           </Animated.View>
 
@@ -843,14 +850,6 @@ export default function GameScreen() {
               </ScrollView>
             </View>
           )}
-
-          <Pressable
-            style={({ pressed }) => [styles.infoButton, pressed && { opacity: 0.6 }]}
-            onPress={showOnboarding}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={styles.infoButtonText}>i</Text>
-          </Pressable>
           </SafeAreaView>
         </View>
 
@@ -1448,16 +1447,12 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   infoButton: {
-    position: "absolute",
-    left: 20,
-    bottom: 24,
     width: 22,
     height: 22,
     borderRadius: 11,
     backgroundColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 20,
   },
   infoButtonText: {
     fontSize: 12,
