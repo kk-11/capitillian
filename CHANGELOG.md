@@ -1,3 +1,10 @@
+## [1.14.4](https://github.com/kk-11/capitillian/compare/v1.14.3...v1.14.4) (2026-07-26)
+
+
+### Bug Fixes
+
+* bundle globe texture, country borders, and topojson lib locally ([d5f05d3](https://github.com/kk-11/capitillian/commit/d5f05d3aa19cf621a76c159e06267dc2323e0a4a))
+
 ## [1.14.3](https://github.com/kk-11/capitillian/compare/v1.14.2...v1.14.3) (2026-07-24)
 
 
