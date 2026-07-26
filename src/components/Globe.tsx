@@ -2,6 +2,9 @@ import React, { useRef, useEffect } from "react";
 import { StyleSheet, View, Animated } from "react-native";
 import WebView from "react-native-webview";
 import * as Sentry from "@sentry/react-native";
+import countriesTopology from "../../assets/globe/countries-110m.json";
+import { TOPOJSON_CLIENT_SRC } from "./globe/topojsonClientSource";
+import { EARTH_TEXTURE_BASE64 } from "./globe/earthTextureBase64";
 
 type GlobeProps = {
   targetLat?: number;
@@ -15,6 +18,9 @@ type GlobeProps = {
 
 // Renders a spinning textured earth using 2D canvas pixel projection.
 // Supports smooth zoom + rotation to a target lat/lng via injectJavaScript.
+// The earth texture, country topology, and topojson-client library are all
+// bundled into the app (see ./globe/*) rather than fetched at runtime, so the
+// globe renders fully offline.
 const HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -24,7 +30,13 @@ const HTML = `<!DOCTYPE html>
   html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF}
   canvas{display:block;image-rendering:auto}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onerror="window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:'error',msg:'topojson_cdn_failed'}))"></script>
+<script>
+try {
+${TOPOJSON_CLIENT_SRC}
+} catch (e) {
+  window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({type:'error', msg:'topojson_init_failed', detail: String(e)}));
+}
+</script>
 </head>
 <body>
 <script>
@@ -52,11 +64,10 @@ function setupCanvas() {
 setupCanvas();
 
 // ---------------------------------------------------------------------------
-// Texture — photo loaded from Wikipedia
+// Texture — bundled earth photo (base64, embedded by the app)
 // ---------------------------------------------------------------------------
 var texPx = null, texW = 0, texH = 0;
 var img = new Image();
-img.crossOrigin = 'anonymous';
 img.onload = function() {
   var tc = document.createElement('canvas');
   tc.width = 1024; tc.height = 512;
@@ -65,7 +76,10 @@ img.onload = function() {
   var d = tctx.getImageData(0, 0, 1024, 512);
   texPx = d.data; texW = 1024; texH = 512;
 };
-img.src = 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Whole_world_-_land_and_oceans_12000.jpg';
+img.onerror = function() {
+  window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({type:'error', msg:'earth_texture_decode_failed'}));
+};
+img.src = 'data:image/jpeg;base64,${EARTH_TEXTURE_BASE64}';
 
 // ---------------------------------------------------------------------------
 // Country polygon data (world-atlas + topojson)
@@ -107,23 +121,21 @@ var countriesGeo = null;
 var hlFeature = null, hlAlpha = 0, hlExtrusion = 0;
 var pendingHlCode = null;
 
-fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
-  .then(function(r) { return r.json(); })
-  .then(function(world) {
-    if (typeof topojson !== 'undefined') {
-      countriesGeo = topojson.feature(world, world.objects.countries).features;
-      if (pendingHlCode) setHighlight(pendingHlCode);
-    } else {
-      window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
-        JSON.stringify({type:'error', msg:'topojson_undefined_on_fetch'})
-      );
-    }
-  })
-  .catch(function(e) {
+try {
+  var world = ${JSON.stringify(countriesTopology)};
+  if (typeof topojson !== 'undefined') {
+    countriesGeo = topojson.feature(world, world.objects.countries).features;
+    if (pendingHlCode) setHighlight(pendingHlCode);
+  } else {
     window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
-      JSON.stringify({type:'error', msg:'world_atlas_fetch_failed', detail: String(e)})
+      JSON.stringify({type:'error', msg:'topojson_undefined_on_load'})
     );
-  });
+  }
+} catch (e) {
+  window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+    JSON.stringify({type:'error', msg:'world_atlas_parse_failed', detail: String(e)})
+  );
+}
 
 window.setHighlight = function(code) {
   pendingHlCode = code;
