@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import Purchases, { type CustomerInfo, LOG_LEVEL } from "react-native-purchases";
+import Purchases, { type CustomerInfo, LOG_LEVEL, PURCHASES_ERROR_CODE } from "react-native-purchases";
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
 const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
 const ENTITLEMENT_ID = "Capitillian Premium";
 const IS_EXPO_GO = __DEV__ && Constants.appOwnership === "expo";
+const CACHED_PREMIUM_KEY = "premium.lastKnownIsPremium";
 
 type PremiumContextValue = {
   isPremium: boolean;
@@ -22,7 +24,9 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   const [initializing, setInitializing] = useState(true);
 
   const checkPremium = (info: CustomerInfo) => {
-    setIsPremium(info.entitlements.active[ENTITLEMENT_ID] !== undefined);
+    const active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    setIsPremium(active);
+    AsyncStorage.setItem(CACHED_PREMIUM_KEY, active ? "true" : "false").catch(() => {});
   };
 
   useEffect(() => {
@@ -35,8 +39,19 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
     Purchases.getCustomerInfo()
       .then(checkPremium)
-      .catch((e) => { Sentry.captureException(e, { extra: { context: "getCustomerInfo" } }); setIsPremium(false); })
+      .catch(async (e) => {
+        Sentry.captureException(e, { extra: { context: "getCustomerInfo" } });
+        // Transient RevenueCat/network failures shouldn't demote a paying user —
+        // fall back to their last known entitlement state instead of assuming false.
+        const cached = await AsyncStorage.getItem(CACHED_PREMIUM_KEY);
+        setIsPremium(cached === "true");
+      })
       .finally(() => setInitializing(false));
+
+    // Warms the SDK's on-device Offerings cache so RevenueCat's offline
+    // entitlement fallback has a product→entitlement mapping to compute from
+    // if a later getCustomerInfo call hits a backend outage. Best-effort only.
+    Purchases.getOfferings().catch(() => {});
 
     Purchases.addCustomerInfoUpdateListener(checkPremium);
     return () => Purchases.removeCustomerInfoUpdateListener(checkPremium);
@@ -51,7 +66,10 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       checkPremium(customerInfo);
     } catch (e: any) {
-      if (!e?.userCancelled) Sentry.captureException(e, { extra: { context: "purchase" } });
+      // `userCancelled` is deprecated and unreliable across platforms/SDK
+      // versions — `code` is RevenueCat's supported way to detect cancellation.
+      const cancelled = e?.userCancelled || e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR;
+      if (!cancelled) Sentry.captureException(e, { extra: { context: "purchase" } });
       throw e;
     }
   };

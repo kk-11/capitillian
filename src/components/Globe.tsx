@@ -538,9 +538,11 @@ export default function Globe({ targetLat, targetLng, interactive = false, onSwi
         fingerprint: ["globe_internal", String(msg.msg)],
       });
     } else if (msg.type === "debug") {
-      Sentry.captureMessage(`Globe debug: ${msg.msg}`, {
-        level: "info",
-        extra: msg,
+      Sentry.addBreadcrumb({
+        category: "globe",
+        message: `Globe debug: ${msg.msg}`,
+        data: msg,
+        level: "debug",
       });
     }
   };

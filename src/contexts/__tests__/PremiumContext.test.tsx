@@ -1,6 +1,7 @@
 import React from "react";
 import { renderHook, act, waitFor } from "@testing-library/react-native";
 import * as Sentry from "@sentry/react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PremiumProvider, usePremium } from "../PremiumContext";
 
 // ---------------------------------------------------------------------------
@@ -33,6 +34,7 @@ jest.mock("react-native-purchases", () => ({
     removeCustomerInfoUpdateListener: (...a: any[]) => mockRemoveListener(...a),
   },
   LOG_LEVEL: { DEBUG: "DEBUG", ERROR: "ERROR" },
+  PURCHASES_ERROR_CODE: { PURCHASE_CANCELLED_ERROR: "1" },
 }));
 
 // ---------------------------------------------------------------------------
@@ -54,11 +56,13 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <PremiumProvider>{children}</PremiumProvider>
 );
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  await AsyncStorage.clear();
   // Run as production by default so tests reflect real behaviour
   (global as any).__DEV__ = false;
   mockGetCustomerInfo.mockResolvedValue(freeCustomerInfo);
+  mockGetOfferings.mockResolvedValue({ current: { availablePackages: [] } });
   mockAddListener.mockImplementation(() => {});
   mockRemoveListener.mockImplementation(() => {});
 });
@@ -81,6 +85,18 @@ describe("PremiumProvider initialisation", () => {
     await waitFor(() => expect(mockConfigure).toHaveBeenCalledTimes(1));
   });
 
+  it("warms the offerings cache on mount", async () => {
+    renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(mockGetOfferings).toHaveBeenCalledTimes(1));
+  });
+
+  it("initialises normally even when warming the offerings cache fails", async () => {
+    mockGetOfferings.mockRejectedValue(new Error("offerings unavailable"));
+    const { result } = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(result.current.initializing).toBe(false));
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
   it("sets initializing=false after getCustomerInfo resolves", async () => {
     const { result } = renderHook(() => usePremium(), { wrapper });
     await waitFor(() => expect(result.current.initializing).toBe(false));
@@ -99,7 +115,7 @@ describe("PremiumProvider initialisation", () => {
     await waitFor(() => expect(result.current.isPremium).toBe(true));
   });
 
-  it("reports error to Sentry and stays free when getCustomerInfo fails", async () => {
+  it("reports error to Sentry and defaults to free when getCustomerInfo fails with no cached state", async () => {
     const err = new Error("network error");
     mockGetCustomerInfo.mockRejectedValue(err);
     const { result } = renderHook(() => usePremium(), { wrapper });
@@ -108,6 +124,30 @@ describe("PremiumProvider initialisation", () => {
     expect(Sentry.captureException).toHaveBeenCalledWith(err, expect.objectContaining({
       extra: { context: "getCustomerInfo" },
     }));
+  });
+
+  it("falls back to last known premium state when getCustomerInfo fails after a prior successful fetch", async () => {
+    mockGetCustomerInfo.mockResolvedValue(premiumCustomerInfo);
+    const first = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(first.result.current.isPremium).toBe(true));
+    first.unmount();
+
+    mockGetCustomerInfo.mockRejectedValue(new Error("backend hiccup"));
+    const second = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(second.result.current.initializing).toBe(false));
+    expect(second.result.current.isPremium).toBe(true);
+  });
+
+  it("does not fall back to premium when a prior fetch found no active entitlement", async () => {
+    mockGetCustomerInfo.mockResolvedValue(freeCustomerInfo);
+    const first = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(first.result.current.initializing).toBe(false));
+    first.unmount();
+
+    mockGetCustomerInfo.mockRejectedValue(new Error("backend hiccup"));
+    const second = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(second.result.current.initializing).toBe(false));
+    expect(second.result.current.isPremium).toBe(false);
   });
 });
 
@@ -153,6 +193,20 @@ describe("purchase()", () => {
 
   it("does not report to Sentry when user cancels", async () => {
     const cancelError = { userCancelled: true, message: "User cancelled" };
+    mockPurchasePackage.mockRejectedValue(cancelError);
+    const { result } = renderHook(() => usePremium(), { wrapper });
+    await waitFor(() => expect(result.current.initializing).toBe(false));
+
+    await act(async () => {
+      try { await result.current.purchase(); } catch {}
+    });
+    expect(Sentry.captureException).not.toHaveBeenCalledWith(
+      cancelError, expect.anything()
+    );
+  });
+
+  it("does not report to Sentry when the platform only sets the cancellation error code (not userCancelled)", async () => {
+    const cancelError = { code: "1", message: "Purchase was cancelled." };
     mockPurchasePackage.mockRejectedValue(cancelError);
     const { result } = renderHook(() => usePremium(), { wrapper });
     await waitFor(() => expect(result.current.initializing).toBe(false));

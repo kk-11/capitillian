@@ -56,7 +56,7 @@ export default function PremiumDialog({ visible, onPurchase, onDismiss, onRestor
           <TouchableOpacity
             style={styles.buyButton}
             onPress={() => {
-              Sentry.captureMessage("premium.unlock_tapped", "info");
+              Sentry.addBreadcrumb({ category: "premium", message: "premium.unlock_tapped", level: "info" });
               onPurchase();
             }}
             activeOpacity={0.85}
@@ -71,7 +71,7 @@ export default function PremiumDialog({ visible, onPurchase, onDismiss, onRestor
           <TouchableOpacity
             style={styles.restoreButton}
             onPress={() => {
-              Sentry.captureMessage("premium.restore_tapped", "info");
+              Sentry.addBreadcrumb({ category: "premium", message: "premium.restore_tapped", level: "info" });
               onRestore();
             }}
             activeOpacity={0.7}
