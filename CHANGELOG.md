@@ -1,3 +1,12 @@
+## [1.14.5](https://github.com/kk-11/capitillian/compare/v1.14.4...v1.14.5) (2026-07-29)
+
+
+### Bug Fixes
+
+* correct Sentry project name to capitillian ([a1da303](https://github.com/kk-11/capitillian/commit/a1da3033d2315e8b633998cd1a99a34ab3b909ce))
+* reduce Sentry noise and harden premium purchase error handling ([d486d51](https://github.com/kk-11/capitillian/commit/d486d5159b1fd7147c7a559e9fa7890c2661ff34))
+* restructure top bar into two rows to reduce crowding ([9dc0129](https://github.com/kk-11/capitillian/commit/9dc0129588b6dc5bc6d7f5aa7e941d07c1c3ad64))
+
 ## [1.14.4](https://github.com/kk-11/capitillian/compare/v1.14.3...v1.14.4) (2026-07-26)
 
 
