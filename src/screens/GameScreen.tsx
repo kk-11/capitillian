@@ -588,14 +588,7 @@ export default function GameScreen() {
             opacity: headerAnim,
             transform: [{ translateY: headerSlide }],
           }]}>
-            <View>
-              {hasTimer ? (
-                <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
-              ) : (
-                <Text style={styles.practiceLabel}>PRACTICE</Text>
-              )}
-            </View>
-            <View style={styles.topRight}>
+            <View style={styles.topBarRow}>
               <View ref={hardcoreToggleRef} collapsable={false}>
                 <TouchableOpacity
                   style={[styles.hardcoreToggle, isHardcore && styles.hardcoreToggleActive]}
@@ -621,11 +614,34 @@ export default function GameScreen() {
                 activeOpacity={0.7}
                 disabled={status === "playing"}
               >
-                <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
-                  {MODE_LABELS[gameMode]}
-                </Text>
+                <View style={styles.modeRow}>
+                  <Text style={[styles.modeLabel, status === "playing" && styles.controlsLocked]}>
+                    {MODE_LABELS[gameMode]}
+                  </Text>
+                  <Text style={styles.progressDot}>•</Text>
+                  <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
+                </View>
               </TouchableOpacity>
-              <Text style={styles.progress}>{pairsMatched} / {targetPairs}</Text>
+            </View>
+
+            <View style={styles.topBarRow}>
+              <Animated.View
+                style={[styles.timerRow, { opacity: stopButtonOpacity }]}
+                pointerEvents={status === "playing" ? "auto" : "none"}
+              >
+                {hasTimer ? (
+                  <Text style={[styles.timer, timerColor]}>{formatTime(secondsLeft)}</Text>
+                ) : (
+                  <Text style={styles.practiceLabel}>PRACTICE</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => startGame(REGIONS[gameMode], isPremium, false, isHardcore)}
+                  activeOpacity={0.5}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.stopButtonText}>✕</Text>
+                </TouchableOpacity>
+              </Animated.View>
               <Pressable
                 style={({ pressed }) => [styles.infoButton, pressed && { opacity: 0.6 }]}
                 onPress={showOnboarding}
@@ -637,18 +653,6 @@ export default function GameScreen() {
           </Animated.View>
 
           <Animated.View style={[styles.board, { opacity: boardOpacity }]}>
-            <Animated.View
-              style={[styles.stopButtonAbsolute, { opacity: stopButtonOpacity }]}
-              pointerEvents={status === "playing" ? "auto" : "none"}
-            >
-              <TouchableOpacity
-                onPress={() => startGame(REGIONS[gameMode], isPremium, false, isHardcore)}
-                activeOpacity={0.5}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.stopButtonText}>✕</Text>
-              </TouchableOpacity>
-            </Animated.View>
             <ScrollView
               style={styles.cardsScroll}
               contentContainerStyle={styles.cardsContent}
@@ -1417,15 +1421,19 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   topBar: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  topBarRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
   },
-  stopButtonAbsolute: {
-    zIndex: 10,
-    opacity: 0.3,
+  timerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   stopButtonText: {
     fontSize: 22,
@@ -1460,10 +1468,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 13,
   },
-  topRight: {
+  modeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 6,
   },
   modeLabel: {
     fontSize: 16,
@@ -1472,6 +1480,11 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     textDecorationStyle: "solid",
     letterSpacing: 0.3,
+  },
+  progressDot: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    opacity: 0.5,
   },
   progress: {
     fontSize: 16,
