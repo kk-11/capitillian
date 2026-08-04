@@ -4,11 +4,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { colors } from "../theme/colors";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export interface Rect {
   x: number;
@@ -31,12 +29,13 @@ interface SpotlightOnboardingProps {
 }
 
 const PAD = 8;
-const TOOLTIP_WIDTH = Math.min(SCREEN_WIDTH - 48, 300);
 const TOOLTIP_HEIGHT_ESTIMATE = 130;
 const MARGIN = 14;
 
 export default function SpotlightOnboarding({ visible, steps, onDone }: SpotlightOnboardingProps) {
   const [index, setIndex] = useState(0);
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const TOOLTIP_WIDTH = Math.min(SCREEN_WIDTH - 48, 300);
 
   // This component stays mounted permanently (only `visible` toggles), so
   // reset back to the first step every time it's (re)opened.
@@ -72,10 +71,10 @@ export default function SpotlightOnboarding({ visible, steps, onDone }: Spotligh
       {/* Dimmer: top/bottom/left/right strips around the hole, each independently
           tappable-to-advance. Nothing is drawn over the hole itself, so a tap there
           falls through to the real control underneath instead of being captured. */}
-      <Pressable onPress={advance} style={[styles.dim, { left: 0, top: 0, width: SCREEN_WIDTH, height: hole.top }]} />
-      <Pressable onPress={advance} style={[styles.dim, { left: 0, top: hole.top + hole.height, width: SCREEN_WIDTH, height: SCREEN_HEIGHT - hole.top - hole.height }]} />
+      <Pressable onPress={advance} style={[styles.dim, { left: 0, right: 0, top: 0, height: hole.top }]} />
+      <Pressable onPress={advance} style={[styles.dim, { left: 0, right: 0, top: hole.top + hole.height, bottom: 0 }]} />
       <Pressable onPress={advance} style={[styles.dim, { left: 0, top: hole.top, width: hole.left, height: hole.height }]} />
-      <Pressable onPress={advance} style={[styles.dim, { left: hole.left + hole.width, top: hole.top, width: SCREEN_WIDTH - hole.left - hole.width, height: hole.height }]} />
+      <Pressable onPress={advance} style={[styles.dim, { right: 0, top: hole.top, left: hole.left + hole.width, height: hole.height }]} />
 
       <View pointerEvents="none" style={[styles.ring, { left: hole.left, top: hole.top, width: hole.width, height: hole.height }]} />
 

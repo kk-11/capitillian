@@ -9,12 +9,13 @@ import {
   TextInput,
   Dimensions,
   Animated,
+  Platform,
 } from "react-native";
 import * as Sentry from "@sentry/react-native";
 import { Gesture, GestureDetector, TouchableOpacity, ScrollView } from "react-native-gesture-handler";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../contexts/PremiumContext";
 import { useFaceSelector } from "../game/useFaceSelector";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -311,15 +312,30 @@ export default function GameScreen() {
   // Spotlight onboarding — highlights the hardcore toggle and the column
   // headers. Runs automatically once on first launch, and can be replayed
   // anytime via the info button next to the timer.
+  const insets = useSafeAreaInsets();
+  // On Android, measureInWindow reports coordinates relative to the content
+  // area below the status bar, while the fullscreen overlay (edge-to-edge)
+  // is positioned from the true top of the window — so every measured rect
+  // needs the status bar inset added back in, or the spotlight lands too
+  // high. iOS's measureInWindow already returns true window coordinates.
+  const androidStatusBarOffset = Platform.OS === "android" ? insets.top : 0;
   const measureRect = (ref: React.RefObject<View | null>) =>
     new Promise<Rect | null>((resolve) => {
       if (!ref.current) return resolve(null);
       ref.current.measureInWindow((x, y, width, height) => {
-        resolve(width > 0 && height > 0 ? { x, y, width, height } : null);
+        resolve(width > 0 && height > 0 ? { x, y: y + androidStatusBarOffset, width, height } : null);
       });
     });
 
+  // On Android, native-driven transforms (e.g. the intro headerSlide
+  // translateY) can commit on the UI thread a frame or two after the JS
+  // animation's `.start()` callback fires. Measuring immediately can catch
+  // the hardcore toggle mid-settle, so wait a couple of frames first.
+  const nextFrame = () =>
+    new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
   const showOnboarding = async () => {
+    await nextFrame();
     const [hcRect, leftRect, rightRect, dotsRect] = await Promise.all([
       measureRect(hardcoreToggleRef),
       measureRect(leftHeaderRef),
