@@ -37,10 +37,12 @@ export default function SpotlightOnboarding({ visible, steps, onDone }: Spotligh
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const TOOLTIP_WIDTH = Math.min(SCREEN_WIDTH - 48, 300);
 
-  // This component stays mounted permanently (only `visible` toggles), so
-  // reset back to the first step every time it's (re)opened.
+  // This component stays mounted permanently (only `visible` toggles). Reset
+  // on close rather than on open, so the index is already 0 by the time the
+  // next open re-renders — resetting on open would flash the previous
+  // session's last step for a frame before this effect could run.
   useEffect(() => {
-    if (visible) setIndex(0);
+    if (!visible) setIndex(0);
   }, [visible]);
 
   if (!visible || steps.length === 0) return null;
