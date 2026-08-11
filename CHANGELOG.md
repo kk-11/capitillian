@@ -1,3 +1,11 @@
+## [1.14.6](https://github.com/kk-11/capitillian/compare/v1.14.5...v1.14.6) (2026-08-11)
+
+
+### Bug Fixes
+
+* correct Android spotlight onboarding positioning ([fce2705](https://github.com/kk-11/capitillian/commit/fce270576e9e9674123e842c04d382e37b1d0aa5))
+* reset spotlight onboarding to first step on close, not reopen ([3ff3b56](https://github.com/kk-11/capitillian/commit/3ff3b56b01a560d99eb66f1bb486428614eb5f4f))
+
 ## [1.14.5](https://github.com/kk-11/capitillian/compare/v1.14.4...v1.14.5) (2026-07-29)
 
 
