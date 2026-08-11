@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
   Platform,
+  Keyboard,
 } from "react-native";
 import * as Sentry from "@sentry/react-native";
 import { Gesture, GestureDetector, TouchableOpacity, ScrollView } from "react-native-gesture-handler";
@@ -235,15 +236,13 @@ export default function GameScreen() {
   const [focusedCountry, setFocusedCountry] = useState<Country | null>(null);
   const [freePalestine, setFreePalestine] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
-  const [listExpandedCode, setListExpandedCode] = useState<string | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
-  const [visibleCountryCount, setVisibleCountryCount] = useState(10);
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [selectedCountryExpanded, setSelectedCountryExpanded] = useState(false);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const currentPageRef = useRef(0);
   const translateX = useRef(new Animated.Value(0)).current;
-  const [globeCountry, setGlobeCountry] = useState<Country | null>(null);
-  const [globePanelExpanded, setGlobePanelExpanded] = useState(false);
   const panelTappedRef = useRef(false);
   const [highlightCode, setHighlightCode] = useState<string | null>(null);
   const stopButtonOpacity = useRef(new Animated.Value(0)).current;
@@ -368,7 +367,7 @@ export default function GameScreen() {
       {
         key: "pages",
         title: "There's more to explore",
-        body: "Swipe or tap the dots to reach the globe, browse every country, and check your achievements.",
+        body: "Swipe or tap the dots to reach the globe, search any country, and check your achievements.",
         rect: dotsRect,
       },
     ]);
@@ -520,10 +519,10 @@ export default function GameScreen() {
 
   const handleGlobeTap = (lat: number, lon: number, code?: string | null) => {
     if (panelTappedRef.current) { panelTappedRef.current = false; return; }
-    setGlobePanelExpanded(false);
+    setSelectedCountryExpanded(true);
     if (code) {
       const found = COUNTRIES.find(c => c.code === code);
-      if (found) { setGlobeCountry(found); setHighlightCode(found.code); return; }
+      if (found) { setSelectedCountry(found); setHighlightCode(found.code); return; }
     }
     let nearest = COUNTRIES[0];
     let minDist = Infinity;
@@ -534,7 +533,7 @@ export default function GameScreen() {
       const d = dlat * dlat + (dlon * cosLat) ** 2;
       if (d < minDist) { minDist = d; nearest = c; }
     }
-    setGlobeCountry(nearest);
+    setSelectedCountry(nearest);
     setHighlightCode(nearest.code);
   };
 
@@ -557,24 +556,21 @@ export default function GameScreen() {
       .failOffsetY([-15, 15])
       .onUpdate((e) => {
         const base = -currentPageRef.current * SCREEN_WIDTH;
-        const clamped = Math.max(-3 * SCREEN_WIDTH, Math.min(0, base + e.translationX));
+        const clamped = Math.max(-2 * SCREEN_WIDTH, Math.min(0, base + e.translationX));
         translateX.setValue(clamped);
       })
       .onEnd((e) => {
         const page = currentPageRef.current;
-        if (e.translationX < -50 && page < 3) goToPage(page + 1);
+        if (e.translationX < -50 && page < 2) goToPage(page + 1);
         else if (e.translationX > 50 && page > 0) goToPage(page - 1);
         else goToPage(page);
       }),
   [currentPage]);
 
-  // Group all countries by continent for the list page
-  const continents = Array.from(new Set(COUNTRIES.map(c => c.continent))).sort();
-
   const filteredCountries = useMemo(() => {
     const q = countrySearch.toLowerCase();
     return COUNTRIES.filter(c =>
-      !q || c.name.toLowerCase().includes(q) || c.capital.toLowerCase().includes(q)
+      !q || c.name.toLowerCase().startsWith(q) || c.capital.toLowerCase().startsWith(q)
     ).sort((a, b) => a.name.localeCompare(b.name));
   }, [countrySearch]);
 
@@ -876,120 +872,126 @@ export default function GameScreen() {
         {/* ---------------------------------------- */}
         {/* Page 2: Globe (transparent — globe       */}
         {/* background shows through & is now        */}
-        {/* interactive)                             */}
+        {/* interactive) with a country search        */}
+        {/* combobox pinned to the top                */}
         {/* ---------------------------------------- */}
-        <View style={styles.page} pointerEvents="none" />
-
-        {/* ---------------------------------------- */}
-        {/* Page 3: Countries list                   */}
-        {/* ---------------------------------------- */}
-        <View style={styles.page}>
-          <SafeAreaView style={styles.safe}>
-            <Text style={styles.listTitle}>All Countries</Text>
-            <TextInput
-              style={styles.searchBar}
-              placeholder="Search countries or capitals..."
-              placeholderTextColor={colors.textSecondary}
-              value={countrySearch}
-              onChangeText={t => { setCountrySearch(t); setVisibleCountryCount(10); }}
-              clearButtonMode="while-editing"
-              autoCorrect={false}
-              autoCapitalize="none"
-            />
-            <ScrollView
-              style={styles.listScroll}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              {filteredCountries.slice(0, visibleCountryCount).map((country) => {
-                const expanded = listExpandedCode === country.code;
-                return (
-                  <TouchableOpacity
-                    key={country.code}
-                    style={[styles.countryRow, expanded && styles.countryRowExpanded]}
-                    onPress={() => {
-                      const isExpanding = !expanded;
-                      setListExpandedCode(isExpanding ? country.code : null);
-                      if (isExpanding) {
+        <View style={styles.page} pointerEvents="box-none">
+          <SafeAreaView style={styles.safeTransparent} pointerEvents="box-none">
+            <View style={styles.globeSearchWrap} pointerEvents="box-none">
+              <TextInput
+                style={styles.searchBar}
+                placeholder="Search countries or capitals..."
+                placeholderTextColor={colors.textSecondary}
+                value={countrySearch}
+                onChangeText={setCountrySearch}
+                clearButtonMode="while-editing"
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              {countrySearch.length > 0 && !selectedCountryExpanded && (
+                <View style={styles.searchResults}>
+                  {filteredCountries.slice(0, 3).map((country) => (
+                    <TouchableOpacity
+                      key={country.code}
+                      style={styles.countryRow}
+                      activeOpacity={0.7}
+                      onPress={() => {
                         setFocusedCountry(country);
                         setHighlightCode(country.code);
-                      }
-                    }}
+                        setSelectedCountry(country);
+                        setSelectedCountryExpanded(true);
+                        setCountrySearch("");
+                        Keyboard.dismiss();
+                      }}
+                    >
+                      <View style={styles.countryRowMain}>
+                        <Text style={styles.countryFlag}>{country.flag}</Text>
+                        <View style={styles.countryText}>
+                          <Text style={styles.countryName}>{country.name}</Text>
+                          <Text style={styles.countryCapital}>{country.capital}</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {selectedCountry && (
+                <View style={styles.searchResults}>
+                  <TouchableOpacity
+                    style={[styles.countryRow, selectedCountryExpanded && styles.countryRowExpanded]}
                     activeOpacity={0.7}
+                    onPress={() => {
+                      panelTappedRef.current = true;
+                      setSelectedCountryExpanded(e => !e);
+                    }}
                   >
                     <View style={styles.countryRowMain}>
-                      <Text style={styles.countryFlag}>{country.flag}</Text>
+                      <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
                       <View style={styles.countryText}>
-                        <Text style={styles.countryName}>{country.name}</Text>
-                        <Text style={styles.countryCapital}>{country.capital}</Text>
+                        <Text style={styles.countryName}>{selectedCountry.name}</Text>
+                        <Text style={styles.countryCapital}>{selectedCountry.capital}</Text>
                         <Text style={styles.countryMeta}>
-                          {country.language} · {country.currencyCode} · {country.callingCode} · {formatArea(country.area)}
+                          {selectedCountry.language} · {selectedCountry.currencyCode} · {selectedCountry.callingCode} · {formatArea(selectedCountry.area)}
                         </Text>
                       </View>
                       <View style={styles.countryRight}>
-                        <Text style={styles.countryPop}>{formatPopulation(country.population)}</Text>
-                        <Text style={styles.countryCode}>{country.code}</Text>
+                        <Text style={styles.countryPop}>{formatPopulation(selectedCountry.population)}</Text>
+                        <Text style={styles.countryCode}>{selectedCountry.code}</Text>
                         <View style={styles.countryTags}>
-                          {country.landlocked && <Text style={styles.countryTag}>🏔️</Text>}
-                          {country.island     && <Text style={styles.countryTag}>🏝️</Text>}
+                          {selectedCountry.landlocked && <Text style={styles.countryTag}>🏔️</Text>}
+                          {selectedCountry.island     && <Text style={styles.countryTag}>🏝️</Text>}
                         </View>
                       </View>
                     </View>
-                    {expanded && (
+                    {selectedCountryExpanded && (
                       <View style={styles.countryDetail}>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Population</Text>
-                          <Text style={styles.detailValue}>{country.population.toLocaleString()}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.population.toLocaleString()}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Area</Text>
-                          <Text style={styles.detailValue}>{formatArea(country.area)}</Text>
+                          <Text style={styles.detailValue}>{formatArea(selectedCountry.area)}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Capital</Text>
-                          <Text style={styles.detailValue}>{country.capital}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.capital}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Language</Text>
-                          <Text style={styles.detailValue}>{country.language}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.language}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Currency</Text>
-                          <Text style={styles.detailValue}>{country.currencyCode}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.currencyCode}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Calling code</Text>
-                          <Text style={styles.detailValue}>{country.callingCode}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.callingCode}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>Continent</Text>
-                          <Text style={styles.detailValue}>{country.continent}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.continent}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>🏔️  Landlocked</Text>
-                          <Text style={styles.detailValue}>{country.landlocked ? "Yes" : "No"}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.landlocked ? "Yes" : "No"}</Text>
                         </View>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>🏝️  Island nation</Text>
-                          <Text style={styles.detailValue}>{country.island ? "Yes" : "No"}</Text>
+                          <Text style={styles.detailValue}>{selectedCountry.island ? "Yes" : "No"}</Text>
                         </View>
-                        <PlacesRow places={COUNTRY_PLACES[country.name] ?? []} />
+                        <PlacesRow places={COUNTRY_PLACES[selectedCountry.name] ?? []} />
                       </View>
                     )}
                   </TouchableOpacity>
-                );
-              })}
-              {visibleCountryCount < filteredCountries.length && (
-                <Pressable style={styles.loadMoreButton} onPress={() => setVisibleCountryCount(c => c + 10)}>
-                  <Text style={styles.loadMoreText}>+</Text>
-                </Pressable>
+                </View>
               )}
-            </ScrollView>
+            </View>
           </SafeAreaView>
         </View>
         {/* ---------------------------------------- */}
-        {/* Page 4: Goals / Badges                   */}
+        {/* Page 3: Goals / Badges                   */}
         {/* ---------------------------------------- */}
         <View style={styles.page}>
           <SafeAreaView style={styles.safe}>
@@ -1070,12 +1072,12 @@ export default function GameScreen() {
           ref={pageDotsRef}
           style={styles.dotsContainer}
           onPress={() => {
-            goToPage((currentPage + 1) % 4);
+            goToPage((currentPage + 1) % 3);
             if (onboardingSteps.length > 0) dismissOnboarding();
           }}
           hitSlop={{ top: 12, bottom: 12, left: 20, right: 20 }}
         >
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1, 2].map((i) => (
             <View key={i} style={[styles.dot, currentPage === i && styles.dotActive]} />
           ))}
         </Pressable>
@@ -1115,63 +1117,6 @@ export default function GameScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Globe country info panel */}
-      {currentPage === 1 && globeCountry && (
-        <Pressable
-          style={({ pressed }) => [styles.globePanel, pressed && { opacity: 0.9 }]}
-          onPress={() => {
-            panelTappedRef.current = true;
-            setGlobePanelExpanded(e => !e);
-          }}
-        >
-          <View style={styles.globePanelRow}>
-            <Text style={styles.globePanelFlag}>{globeCountry.flag}</Text>
-            <View style={styles.globePanelText}>
-              <Text style={styles.globePanelName}>{globeCountry.name}</Text>
-              <Text style={styles.globePanelCapital}>{globeCountry.capital} · {globeCountry.currencyCode} · {globeCountry.callingCode}</Text>
-            </View>
-            <Text style={styles.globePanelContinent}>{globeCountry.continent}</Text>
-          </View>
-          {globePanelExpanded && (
-            <View style={styles.globePanelDetails}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Population</Text>
-                <Text style={styles.detailValue}>{globeCountry.population.toLocaleString()}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Area</Text>
-                <Text style={styles.detailValue}>{formatArea(globeCountry.area)}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Language</Text>
-                <Text style={styles.detailValue}>{globeCountry.language}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Currency</Text>
-                <Text style={styles.detailValue}>{globeCountry.currencyCode}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Calling code</Text>
-                <Text style={styles.detailValue}>{globeCountry.callingCode}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Continent</Text>
-                <Text style={styles.detailValue}>{globeCountry.continent}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>🏔️  Landlocked</Text>
-                <Text style={styles.detailValue}>{globeCountry.landlocked ? "Yes" : "No"}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>🏝️  Island nation</Text>
-                <Text style={styles.detailValue}>{globeCountry.island ? "Yes" : "No"}</Text>
-              </View>
-              <PlacesRow places={COUNTRY_PLACES[globeCountry.name] ?? []} />
-            </View>
-          )}
-        </Pressable>
-      )}
-
       <SpotlightOnboarding
         visible={currentPage === 0 && onboardingSteps.length > 0}
         steps={onboardingSteps}
@@ -1210,7 +1155,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    width: SCREEN_WIDTH * 4,
+    width: SCREEN_WIDTH * 3,
     flexDirection: "row",
   },
   page: {
@@ -1261,7 +1206,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     color: "rgba(255,255,255,0.4)",
   },
-  // Countries list page
+  // Globe page search combobox
+  globeSearchWrap: {
+    paddingTop: 12,
+  },
   searchBar: {
     marginHorizontal: 16,
     marginBottom: 8,
@@ -1274,15 +1222,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
   },
-  loadMoreButton: {
-    alignItems: "center",
-    paddingVertical: 16,
+  searchResults: {
+    paddingHorizontal: 16,
+    gap: 4,
   },
-  loadMoreText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.primary,
-  },
+  // Goals / badges list page
   listTitle: {
     fontSize: 18,
     fontWeight: "800",
@@ -1388,53 +1332,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
-  },
-  // Globe country panel
-  globePanel: {
-    position: "absolute",
-    top: 60,
-    left: 16,
-    right: 16,
-    backgroundColor: "rgba(240,247,255,0.96)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-  },
-  globePanelDetails: {
-    marginTop: 12,
-    gap: 6,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(21,101,192,0.12)",
-    paddingTop: 12,
-  },
-  globePanelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  globePanelFlag: {
-    fontSize: 36,
-  },
-  globePanelText: {
-    flex: 1,
-    gap: 3,
-  },
-  globePanelName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.textPrimary,
-  },
-  globePanelCapital: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  globePanelContinent: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
   },
   topBar: {
     paddingHorizontal: 20,
