@@ -13,8 +13,7 @@ Sentry.init({
 	sendDefaultPii: true,
 	enableLogs: true,
 	replaysSessionSampleRate: 0,
-	replaysOnErrorSampleRate: 1,
-	integrations: [Sentry.mobileReplayIntegration()],
+	replaysOnErrorSampleRate: 0,
 });
 
 const Stack = createNativeStackNavigator();
