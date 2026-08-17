@@ -1,3 +1,10 @@
+## [1.14.7](https://github.com/kk-11/capitillian/compare/v1.14.6...v1.14.7) (2026-08-17)
+
+
+### Bug Fixes
+
+* **sentry:** only capture session replay on error, not every session ([4804fc4](https://github.com/kk-11/capitillian/commit/4804fc461fd526867bc41c55c87b083d4c42d250))
+
 ## [1.14.6](https://github.com/kk-11/capitillian/compare/v1.14.5...v1.14.6) (2026-08-11)
 
 
