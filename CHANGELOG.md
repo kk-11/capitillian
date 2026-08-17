@@ -1,3 +1,10 @@
+## [1.14.8](https://github.com/kk-11/capitillian/compare/v1.14.7...v1.14.8) (2026-08-17)
+
+
+### Bug Fixes
+
+* **sentry:** disable session replay to stop consuming replay quota ([71afa4a](https://github.com/kk-11/capitillian/commit/71afa4a66bda510ef49a6ecb79ad92c502f6b153))
+
 ## [1.14.7](https://github.com/kk-11/capitillian/compare/v1.14.6...v1.14.7) (2026-08-17)
 
 
