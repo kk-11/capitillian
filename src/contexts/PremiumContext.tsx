@@ -7,8 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ⚠️  API keys from app.revenuecat.com — iOS keys start with "appl_",
 // Android (Google Play) keys start with "goog_". They are not interchangeable.
-// TODO: replace with your RevenueCat Google Play API key.
-const REVENUECAT_ANDROID_API_KEY = "goog_REPLACE_ME";
+const REVENUECAT_ANDROID_API_KEY = "goog_eNkibBTRtmtoBjDJCtByGpLAzEX";
 const REVENUECAT_API_KEY = Platform.select({
   ios: "appl_gNWFDaxhMzXNKrinhvnAbofnlSg",
   android: REVENUECAT_ANDROID_API_KEY,
