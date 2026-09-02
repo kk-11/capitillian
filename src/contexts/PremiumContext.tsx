@@ -1,13 +1,22 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Platform } from "react-native";
 import Purchases, { type CustomerInfo, LOG_LEVEL, PURCHASES_ERROR_CODE } from "react-native-purchases";
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ⚠️  Replace with your RevenueCat iOS API key from app.revenuecat.com
-const REVENUECAT_API_KEY = "appl_gNWFDaxhMzXNKrinhvnAbofnlSg";
+// ⚠️  API keys from app.revenuecat.com — iOS keys start with "appl_",
+// Android (Google Play) keys start with "goog_". They are not interchangeable.
+// TODO: replace with your RevenueCat Google Play API key.
+const REVENUECAT_ANDROID_API_KEY = "goog_REPLACE_ME";
+const REVENUECAT_API_KEY = Platform.select({
+  ios: "appl_gNWFDaxhMzXNKrinhvnAbofnlSg",
+  android: REVENUECAT_ANDROID_API_KEY,
+  default: "",
+});
 const ENTITLEMENT_ID = "Capitillian Premium";
 const IS_EXPO_GO = __DEV__ && Constants.appOwnership === "expo";
+const IS_MISSING_KEY = !REVENUECAT_API_KEY || REVENUECAT_API_KEY.includes("REPLACE_ME");
 const CACHED_PREMIUM_KEY = "premium.lastKnownIsPremium";
 
 type PremiumContextValue = {
@@ -35,6 +44,11 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       setInitializing(false);
       return;
     }
+    if (IS_MISSING_KEY) {
+      Sentry.captureMessage(`Missing RevenueCat API key for platform: ${Platform.OS}`);
+      setInitializing(false);
+      return;
+    }
     Purchases.configure({ apiKey: REVENUECAT_API_KEY });
 
     Purchases.getCustomerInfo()
@@ -59,6 +73,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   const purchase = async () => {
     if (IS_EXPO_GO) throw new Error("Purchases unavailable in Expo Go");
+    if (IS_MISSING_KEY) throw new Error(`RevenueCat API key not configured for platform: ${Platform.OS}`);
     try {
       const offerings = await Purchases.getOfferings();
       const pkg = offerings.current?.availablePackages[0];
@@ -76,6 +91,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   const restorePurchases = async (): Promise<boolean> => {
     if (IS_EXPO_GO) throw new Error("Purchases unavailable in Expo Go");
+    if (IS_MISSING_KEY) throw new Error(`RevenueCat API key not configured for platform: ${Platform.OS}`);
     try {
       const info = await Purchases.restorePurchases();
       const hasPremium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
