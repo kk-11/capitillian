@@ -1,3 +1,11 @@
+## [1.14.9](https://github.com/kk-11/capitillian/compare/v1.14.8...v1.14.9) (2026-09-09)
+
+
+### Bug Fixes
+
+* **premium:** configure RevenueCat Android API key ([9bed708](https://github.com/kk-11/capitillian/commit/9bed708d8818c75345b76033ba0a951dde073047))
+* **premium:** split RevenueCat API key by platform, guard missing key ([b7af49d](https://github.com/kk-11/capitillian/commit/b7af49d8f7c2460e34b415d53cf98748404edcd4))
+
 ## [1.14.8](https://github.com/kk-11/capitillian/compare/v1.14.7...v1.14.8) (2026-08-17)
 
 
