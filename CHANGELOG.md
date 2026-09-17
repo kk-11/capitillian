@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/kk-11/capitillian/compare/v1.14.9...v1.15.0) (2026-09-17)
+
+
+### Features
+
+* **game:** show badge-tier progress on game-over screen ([64b1a6a](https://github.com/kk-11/capitillian/commit/64b1a6a5877199c870e9a352edfb3582cffb32a8))
+
 ## [1.14.9](https://github.com/kk-11/capitillian/compare/v1.14.8...v1.14.9) (2026-09-09)
 
 
