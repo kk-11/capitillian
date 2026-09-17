@@ -462,6 +462,26 @@ export default function GameScreen() {
     countUp,
   } = state;
 
+  // Progress toward the next unearned badge tier for the mode just played —
+  // shown on the game-over screen as a mini goal callout.
+  const modeBadgeGoal = useMemo(() => {
+    const group = BADGE_GROUPS.find(g => g.mode === gameMode);
+    if (!group) return null;
+    const easyCount = easyCounts[gameMode] ?? 0;
+    const hcCount = hcCounts[gameMode] ?? 0;
+    const nextTier = group.tiers.find(t => !badgeTierState(easyCount, hcCount, t, group.tiers).awakened);
+    const tier = nextTier ?? group.tiers[group.tiers.length - 1];
+    const tierState = badgeTierState(easyCount, hcCount, tier, group.tiers);
+    return {
+      groupLabel: group.label,
+      groupEmoji: group.emoji,
+      tierIcon: tier.icon,
+      tierName: tier.name,
+      maxed: !nextTier,
+      ...tierState,
+    };
+  }, [gameMode, easyCounts, hcCounts]);
+
   // Direct card press handler — updates globe AND game engine simultaneously
   const handleCardPress = (side: "left" | "right", index: number) => {
     const country = side === "left" ? leftCards[index] : rightCards[index];
@@ -754,6 +774,27 @@ export default function GameScreen() {
                         <Text style={styles.statValue}>{formatTime(timeTaken)}</Text>
                       </View>
                     )}
+                  </View>
+                )}
+
+                {status !== "idle" && hasTimer && modeBadgeGoal && (
+                  <View style={styles.goalBubble}>
+                    <View style={styles.goalBubbleHeader}>
+                      <Text style={styles.goalBubbleMode}>
+                        {modeBadgeGoal.groupEmoji} {modeBadgeGoal.groupLabel}
+                      </Text>
+                      <Text style={styles.goalBubbleCount}>{modeBadgeGoal.label}</Text>
+                    </View>
+                    <View style={styles.goalBubbleTierRow}>
+                      <Text style={styles.goalBubbleTierIcon}>{modeBadgeGoal.tierIcon}</Text>
+                      <Text style={styles.goalBubbleTierName}>
+                        {modeBadgeGoal.tierName.toUpperCase()}
+                        {modeBadgeGoal.awakened ? "  ✓" : ""}
+                      </Text>
+                    </View>
+                    <View style={styles.goalBubbleBarBg}>
+                      <View style={[styles.goalBubbleBarFill, { width: `${modeBadgeGoal.progress * 100}%` as any }]} />
+                    </View>
                   </View>
                 )}
 
@@ -1598,6 +1639,60 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontVariant: ["tabular-nums"],
     letterSpacing: 2,
+  },
+  goalBubble: {
+    width: "100%",
+    backgroundColor: "rgba(124,58,237,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(124,58,237,0.28)",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  goalBubbleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  goalBubbleMode: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: "#6D28D9",
+    opacity: 0.85,
+  },
+  goalBubbleCount: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#5B21B6",
+    fontVariant: ["tabular-nums"],
+  },
+  goalBubbleTierRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  goalBubbleTierIcon: {
+    fontSize: 20,
+  },
+  goalBubbleTierName: {
+    fontSize: 17,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    color: "#5B21B6",
+  },
+  goalBubbleBarBg: {
+    height: 5,
+    backgroundColor: "rgba(124,58,237,0.15)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  goalBubbleBarFill: {
+    height: 5,
+    backgroundColor: "#7C3AED",
+    borderRadius: 3,
   },
   practiceButton: {
     width: "100%",
