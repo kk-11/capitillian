@@ -112,4 +112,24 @@ describe("dual-track independence", () => {
     await waitFor(() => expect(result.current.easyCounts["asia"]).toBe(4));
     expect(result.current.hcCounts["asia"]).toBe(2);
   });
+
+  it("restores every game mode, including non-region modes", async () => {
+    await AsyncStorage.setItem("badge_easy_5 letters",   "5");
+    await AsyncStorage.setItem("badge_hc_nordic cross",  "3");
+
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["5 letters"]).toBe(5));
+    expect(result.current.hcCounts["nordic cross"]).toBe(3);
+  });
+
+  it("increments on top of a restored count instead of overwriting it", async () => {
+    await AsyncStorage.setItem("badge_easy_crescent", "4");
+
+    const { result } = renderHook(() => useBadgeProgress());
+    await waitFor(() => expect(result.current.easyCounts["crescent"]).toBe(4));
+
+    act(() => { result.current.incrementEasy("crescent"); });
+    await waitFor(() => expect(result.current.easyCounts["crescent"]).toBe(5));
+    expect(await AsyncStorage.getItem("badge_easy_crescent")).toBe("5");
+  });
 });

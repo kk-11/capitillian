@@ -1,12 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { GameMode } from "../data/countries";
+import { MODE_LABELS, type GameMode } from "../data/countries";
 
-const MODES: GameMode[] = [
-  "all", "africa", "asia", "europe", "eurasia",
-  "north america", "south america", "oceania", "caribbean",
-  "landlocked", "island",
-];
+const MODES = Object.keys(MODE_LABELS) as GameMode[];
 
 const easyKey = (mode: GameMode) => `badge_easy_${mode}`;
 const hcKey   = (mode: GameMode) => `badge_hc_${mode}`;
