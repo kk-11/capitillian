@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/kk-11/capitillian/compare/v1.15.0...v1.15.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **badges:** restore progress for all game modes on launch ([c462a68](https://github.com/kk-11/capitillian/commit/c462a68108313f9adc1486e3ecaca2d68bbc590c))
+
 # [1.15.0](https://github.com/kk-11/capitillian/compare/v1.14.9...v1.15.0) (2026-09-17)
 
 
