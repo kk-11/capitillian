@@ -1,4 +1,5 @@
 import { useReducer, useRef, useEffect, useCallback } from "react";
+import { AppState } from "react-native";
 import { COUNTRIES, type Country } from "../data/countries";
 
 // ---------------------------------------------------------------------------
@@ -302,6 +303,22 @@ export function useGameEngine() {
   useEffect(() => {
     return () => stopTimer();
   }, [stopTimer]);
+
+  // Pause the round clock while the app isn't in the foreground, and resume it
+  // on return so background time is never added to the player's result.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        const current = stateRef.current;
+        if (current.status === "playing" && current.hasTimer && timerRef.current === null) {
+          startTimer();
+        }
+      } else {
+        stopTimer();
+      }
+    });
+    return () => sub.remove();
+  }, [startTimer, stopTimer]);
 
   // Prepare the board. Timer only starts when the player taps their first card.
   const startGame = useCallback(

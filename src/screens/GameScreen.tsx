@@ -11,6 +11,7 @@ import {
   Animated,
   Platform,
   Keyboard,
+  BackHandler,
 } from "react-native";
 import * as Sentry from "@sentry/react-native";
 import { Gesture, GestureDetector, TouchableOpacity, ScrollView } from "react-native-gesture-handler";
@@ -587,6 +588,18 @@ export default function GameScreen() {
       }),
   [currentPage]);
 
+  // Android Back on the globe page closes an open country card instead of
+  // leaving the app.
+  useEffect(() => {
+    if (currentPage !== 1 || !selectedCountry) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setSelectedCountry(null);
+      setSelectedCountryExpanded(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [currentPage, selectedCountry]);
+
   const filteredCountries = useMemo(() => {
     const q = countrySearch.toLowerCase();
     return COUNTRIES.filter(c =>
@@ -954,6 +967,12 @@ export default function GameScreen() {
                       </View>
                     </TouchableOpacity>
                   ))}
+                  {filteredCountries.length === 0 && (
+                    <View style={[styles.countryRow, styles.searchEmpty]}>
+                      <Text style={styles.searchEmptyTitle}>No countries or capitals match "{countrySearch}"</Text>
+                      <Text style={styles.searchEmptyHint}>Check the spelling or try a different name.</Text>
+                    </View>
+                  )}
                 </View>
               )}
               {selectedCountry && (
@@ -1310,6 +1329,20 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "transparent",
+  },
+  searchEmpty: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 2,
+  },
+  searchEmptyTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+  searchEmptyHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
   countryRowExpanded: {
     borderColor: colors.border,
