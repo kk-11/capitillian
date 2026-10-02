@@ -1,3 +1,10 @@
+## [1.15.2](https://github.com/kk-11/capitillian/compare/v1.15.1...v1.15.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* address PrimeTestLab QA report 7824 findings ([a7dad8c](https://github.com/kk-11/capitillian/commit/a7dad8ca570c06711e8b957b99b140a3a9c21775))
+
 ## [1.15.1](https://github.com/kk-11/capitillian/compare/v1.15.0...v1.15.1) (2026-09-23)
 
 
