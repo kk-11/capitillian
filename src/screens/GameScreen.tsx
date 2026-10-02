@@ -559,6 +559,9 @@ export default function GameScreen() {
   };
 
   const goToPage = (page: number) => {
+    // Blur the globe search when leaving its page; Android Back only hides the
+    // keyboard, leaving the input focused so the IME reopens on app resume.
+    if (page !== 1) Keyboard.dismiss();
     currentPageRef.current = page;
     setCurrentPage(page);
     Animated.spring(translateX, {
@@ -1151,7 +1154,12 @@ export default function GameScreen() {
       </View>
 
       {/* Mode dropdown modal */}
-      <Modal visible={showModeDropdown} transparent animationType="fade">
+      <Modal
+        visible={showModeDropdown}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowModeDropdown(false)}
+      >
         <TouchableWithoutFeedback onPress={() => setShowModeDropdown(false)}>
           <View style={styles.dropdownBackdrop}>
             <View style={styles.dropdown}>
