@@ -1,3 +1,10 @@
+## [1.15.4](https://github.com/kk-11/capitillian/compare/v1.15.3...v1.15.4) (2026-10-14)
+
+
+### Bug Fixes
+
+* **premium:** show an alert when purchase or restore fails ([093b123](https://github.com/kk-11/capitillian/commit/093b123ab0679f3eda120aad9a1045f77d45e03c))
+
 ## [1.15.3](https://github.com/kk-11/capitillian/compare/v1.15.2...v1.15.3) (2026-10-02)
 
 
