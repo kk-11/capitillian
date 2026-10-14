@@ -26,7 +26,7 @@
         "backgroundColor": "#0a0a0a"
       },
       "package": "com.capitillian.app",
-      "versionCode": 12,
+      "versionCode": 13,
       "edgeToEdgeEnabled": true
     },
     "plugins": [
