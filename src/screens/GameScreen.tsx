@@ -12,8 +12,10 @@ import {
   Platform,
   Keyboard,
   BackHandler,
+  Alert,
 } from "react-native";
 import * as Sentry from "@sentry/react-native";
+import { PURCHASES_ERROR_CODE } from "react-native-purchases";
 import { Gesture, GestureDetector, TouchableOpacity, ScrollView } from "react-native-gesture-handler";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -1195,12 +1197,22 @@ export default function GameScreen() {
         visible={showPremiumDialog}
         onDismiss={() => setShowPremiumDialog(false)}
         onPurchase={async () => {
-          await purchase();
-          setShowPremiumDialog(false);
+          try {
+            await purchase();
+            setShowPremiumDialog(false);
+          } catch (e: any) {
+            const cancelled = e?.userCancelled || e?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR;
+            if (!cancelled) Alert.alert("Purchase failed", "Something went wrong. Please try again.");
+          }
         }}
         onRestore={async () => {
-          const didRestore = await restorePurchases();
-          if (didRestore) setShowPremiumDialog(false);
+          try {
+            const didRestore = await restorePurchases();
+            if (didRestore) setShowPremiumDialog(false);
+            else Alert.alert("Nothing to restore", "No previous purchase was found for this account.");
+          } catch {
+            Alert.alert("Restore failed", "Something went wrong. Please try again.");
+          }
         }}
       />
     </View>
